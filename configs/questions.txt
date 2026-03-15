@@ -1,0 +1,8 @@
+# IRIS Standard Question Set for Paper Summarization
+# These questions will be asked for each new paper to generate summaries
+
+What is the main problem this paper addresses?
+What are the key contributions of this paper?
+What methods or techniques are used in this paper?
+What are the important concepts introduced in this paper?
+What are the possible research directions for future work based on this paper?

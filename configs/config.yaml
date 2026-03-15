@@ -1,0 +1,123 @@
+# IRIS Configuration File
+# Intelligent Research Information System
+
+# ============================================================================
+# Update Configuration
+# ============================================================================
+update:
+  interval_hours: 2  # How often to search for new papers
+
+# ============================================================================
+# arXiv Search Configuration
+# ============================================================================
+arxiv:
+  keywords:
+    - neutrino
+    - juno
+    - dune
+    - hyper-kamiokande
+    - super-kamiokande
+    - icecube
+    - sno
+    - kamland
+    - borexino
+    - particle detector
+    - machine learning physics
+  max_results_per_keyword: 20
+  sort_by: SubmittedDate  # Options: SubmittedDate, LastUpdatedDate, RelevanceDate
+
+# ============================================================================
+# Storage Configuration
+# ============================================================================
+# IMPORTANT: Literature database is NOT inside the IRIS project directory
+storage:
+  database_root: /home/NagaiYoru/research/IRIS_papers
+  # Each update creates a timestamped folder structure:
+  # update_YYYY_MM_DD_HHMM/
+  #   ├── pdfs/
+  #   ├── logs/
+  #   │   ├── summary_log.md
+  #   │   ├── knowledge_log.md
+  #   ├── metadata.json
+  #   └── update_log.md
+
+# ============================================================================
+# UltraRAG Configuration
+# ============================================================================
+ultrarag:
+  ultrarag_path: /home/NagaiYoru/LLM_tuning/UltraRAG
+  index_backend: faiss  # Options: faiss, milvus
+  index_storage: /home/NagaiYoru/research/IRIS_papers/index_storage
+  # UltraRAG pipeline configurations
+  pipelines:
+    index_watch: pipelines/offline_build_index_watch.yaml
+    qa_batch: pipelines/online_rag_qa_batch.yaml
+
+# ============================================================================
+# Model Configuration
+# ============================================================================
+models:
+  # Embedding model for vector indexing
+  embedding_model_path: /home/NagaiYoru/LLM_model/Qwen3-Embedding-0.6B
+
+  # Reranker model for search results
+  reranker_model_path: /home/NagaiYoru/LLM_model/MiniCPM-Reranker-Light
+
+  # Generation model for QA and summarization
+  llm_model_path: /home/NagaiYoru/LLM_model/Llama-3.2-3B-Instruct
+
+  # vLLM service configuration
+  vllm:
+    base_url: http://127.0.0.1:65504/v1
+    host: 127.0.0.1
+    port: 65504
+    served_model_name: llama3-3b-instruct
+
+# ============================================================================
+# QA Configuration
+# ============================================================================
+qa:
+  question_set_path: ./configs/questions.txt
+  # QA generation parameters
+  temperature: 0.7
+  top_p: 0.8
+  max_tokens: 2048
+  system_prompt: "你是一个专业的UltraRAG问答助手。请一定记住使用中文回答问题,且足够专业"
+
+# ============================================================================
+# Email Notification Configuration
+# ============================================================================
+email:
+  enabled: false  # Set to true to enable email notifications
+  sender: your_email@gmail.com
+  smtp_server: smtp.gmail.com
+  smtp_port: 587
+  password: your_app_password  # Use app-specific password for Gmail
+  receiver: your_email@gmail.com
+  # Email subject prefix
+  subject_prefix: "[IRIS] "
+
+# ============================================================================
+# Paper Filtering Configuration
+# ============================================================================
+filtering:
+  # Filter out review papers
+  exclude_reviews: true
+  review_keywords:
+    - review
+    - survey
+    - overview
+
+# ============================================================================
+# Duplicate Detection Configuration
+# ============================================================================
+duplicate_detection:
+  enabled: true
+  # Check entry_id against all previous updates
+
+# ============================================================================
+# Logging Configuration
+# ============================================================================
+logging:
+  level: INFO  # Options: DEBUG, INFO, WARNING, ERROR
+  log_dir: ./logs
