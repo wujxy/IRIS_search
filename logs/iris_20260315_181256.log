@@ -1,0 +1,32 @@
+2026-03-15 18:12:56,274 [INFO] utils.helpers: Logging initialized. Log file: logs/iris_20260315_181256.log
+2026-03-15 18:12:56,274 [INFO] __main__: ============================================================
+2026-03-15 18:12:56,274 [INFO] __main__: Starting IRIS Update Cycle
+2026-03-15 18:12:56,274 [INFO] __main__: ============================================================
+2026-03-15 18:12:56,274 [INFO] __main__: 
+[Step 1] Creating update folder...
+2026-03-15 18:12:56,275 [INFO] __main__: Update folder: /home/NagaiYoru/research/IRIS_papers/update_2026_03_15_1812
+2026-03-15 18:12:56,275 [INFO] __main__: 
+[Step 2] Loading existing paper entries...
+2026-03-15 18:12:56,275 [INFO] __main__: Found 0 existing papers in database
+2026-03-15 18:12:56,275 [INFO] __main__: 
+[Step 3] Initializing arXiv service...
+2026-03-15 18:12:56,275 [INFO] __main__: 
+[Step 4] Searching arXiv for papers...
+2026-03-15 18:12:56,275 [INFO] services.arxiv_service: Searching arXiv with keywords: ['neutrino', 'juno', 'dune', 'hyper-kamiokande', 'super-kamiokande', 'icecube', 'sno', 'kamland', 'borexino']
+2026-03-15 18:12:56,275 [INFO] arxiv: Requesting page (first: True, try: 0): https://export.arxiv.org/api/query?search_query=neutrino+OR+juno+OR+dune+OR+hyper-kamiokande+OR+super-kamiokande+OR+icecube+OR+sno+OR+kamland+OR+borexino&id_list=&sortBy=submittedDate&sortOrder=descending&start=0&max_results=100
+2026-03-15 18:12:57,125 [INFO] arxiv: Got first page: 100 of 41672 total results
+2026-03-15 18:12:57,126 [INFO] services.arxiv_service: Found 1 papers from arXiv
+2026-03-15 18:12:57,126 [INFO] __main__: 
+[Step 5] Filtering papers...
+2026-03-15 18:12:57,126 [INFO] services.arxiv_service: Filtering results: 1 new, 0 duplicates, 0 review papers
+2026-03-15 18:12:57,126 [INFO] __main__: 
+[Step 6] Downloading PDFs...
+2026-03-15 18:12:57,126 [ERROR] __main__: Error during update cycle: 'ArxivService' object has no attribute 'download_papers'
+Traceback (most recent call last):
+  File "/home/NagaiYoru/LLM_tuning/IRIS_search/scripts/run_update_cycle.py", line 207, in run_update_cycle
+    papers_with_pdf = arxiv_service.download_papers(new_papers, pdf_dir)
+AttributeError: 'ArxivService' object has no attribute 'download_papers'
+2026-03-15 18:12:57,126 [INFO] __main__: 
+============================================================
+2026-03-15 18:12:57,126 [INFO] __main__: IRIS Update Cycle Failed
+2026-03-15 18:12:57,126 [INFO] __main__: ============================================================

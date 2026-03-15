@@ -63,6 +63,10 @@ class QAService:
         self.pipeline_yaml = self.ultrarag_path / "pipelines" / "online_rag_qa_batch.yaml"
         self.parameter_template = self.ultrarag_path / "parameter" / "online_rag_qa_batch_parameter.yaml.template"
 
+        # vLLM process management
+        self.vllm_process = None
+        self.vllm_auto_started = False
+
         logger.info(f"QA service initialized with LLM: {generation_model}")
 
     def query_knowledge_base(
@@ -351,12 +355,133 @@ class QAService:
         logger.info(f"Extracted {len(answers)} answers")
         return answers
 
-    def check_vllm_service(self, timeout: int = 30) -> bool:
+    def start_vllm_service(
+        self,
+        max_model_len: int = 8192,
+        gpu_memory_utilization: float = 0.7,
+        tensor_parallel_size: int = 1,
+        enforce_eager: bool = True
+    ) -> bool:
+        """
+        Start vLLM service in background as a subprocess.
+
+        Args:
+            max_model_len: Maximum model length
+            gpu_memory_utilization: GPU memory utilization ratio
+            tensor_parallel_size: Tensor parallel size
+            enforce_eager: Whether to use eager execution
+
+        Returns:
+            True if vLLM was started successfully, False otherwise
+        """
+        if self.vllm_process is not None and self.vllm_process.poll() is None:
+            logger.info("vLLM service is already running")
+            return True
+
+        logger.info(f"Starting vLLM service with model: {self.generation_model}")
+
+        # Extract host and port from vllm_base_url
+        # Expected format: http://127.0.0.1:65504/v1
+        from urllib.parse import urlparse
+        parsed = urlparse(self.vllm_base_url)
+        host = parsed.hostname or "127.0.0.1"
+        port = parsed.port or int(self.vllm_port)
+
+        # Build vLLM command
+        # Use the same venv that UltraRAG uses
+        venv_python = self.ultrarag_path / ".venv" / "bin" / "python"
+
+        cmd = [
+            str(venv_python),
+            "-m", "vllm.entrypoints.openai.api_server",
+            "--model", self.generation_model,
+            "--trust-remote-code",
+            "--host", host,
+            "--port", str(port),
+            "--max-model-len", str(max_model_len),
+            "--gpu-memory-utilization", str(gpu_memory_utilization),
+            "--tensor-parallel-size", str(tensor_parallel_size),
+            "--served-model-name", self.served_model_name,
+        ]
+
+        if enforce_eager:
+            cmd.append("--enforce-eager")
+
+        logger.info(f"vLLM command: {' '.join(cmd)}")
+
+        try:
+            # Start vLLM in background with stdout/stderr redirected to devnull
+            import io
+            log_file = Path("logs") / "vllm_output.log"
+            log_file.parent.mkdir(parents=True, exist_ok=True)
+
+            with open(log_file, "a") as log_f:
+                self.vllm_process = subprocess.Popen(
+                    cmd,
+                    stdout=log_f,
+                    stderr=subprocess.STDOUT,
+                    start_new_session=True  # Detach from parent process
+                )
+
+            self.vllm_auto_started = True
+            logger.info(f"vLLM process started with PID: {self.vllm_process.pid}")
+            logger.info(f"vLLM output will be logged to: {log_file}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to start vLLM service: {e}")
+            self.vllm_process = None
+            self.vllm_auto_started = False
+            return False
+
+    def stop_vllm_service(self) -> None:
+        """
+        Stop the vLLM service if it was started by this QAService instance.
+        """
+        if self.vllm_process is None:
+            logger.debug("No vLLM process to stop")
+            return
+
+        if self.vllm_process.poll() is not None:
+            logger.debug("vLLM process already terminated")
+            self.vllm_process = None
+            self.vllm_auto_started = False
+            return
+
+        logger.info(f"Stopping vLLM service (PID: {self.vllm_process.pid})")
+
+        try:
+            # Try graceful shutdown first
+            self.vllm_process.terminate()
+
+            # Wait up to 10 seconds for graceful shutdown
+            try:
+                self.vllm_process.wait(timeout=10)
+                logger.info("vLLM service stopped gracefully")
+            except subprocess.TimeoutExpired:
+                # Force kill if graceful shutdown failed
+                logger.warning("vLLM service did not stop gracefully, forcing...")
+                self.vllm_process.kill()
+                self.vllm_process.wait()
+
+        except Exception as e:
+            logger.error(f"Error stopping vLLM service: {e}")
+
+        self.vllm_process = None
+        self.vllm_auto_started = False
+
+    def __del__(self):
+        """Cleanup when QAService instance is destroyed."""
+        if self.vllm_auto_started:
+            self.stop_vllm_service()
+
+    def check_vllm_service(self, timeout: int = 30, auto_start: bool = False) -> bool:
         """
         Check if vLLM service is ready.
 
         Args:
             timeout: Timeout in seconds
+            auto_start: If True and service is not available, start vLLM automatically
 
         Returns:
             True if service is ready, False otherwise
@@ -378,4 +503,27 @@ class QAService:
             time.sleep(2)
 
         logger.error(f"vLLM service not ready after {timeout} seconds")
+
+        # Auto-start vLLM if enabled
+        if auto_start:
+            logger.info("vLLM service not available, attempting to start...")
+            if self.start_vllm_service():
+                logger.info("vLLM service started, waiting for it to be ready...")
+                # Wait for vLLM to be ready (give it more time for initial startup)
+                startup_timeout = 120  # Give vLLM 2 minutes to fully start
+                start_time = time.time()
+                while time.time() - start_time < startup_timeout:
+                    try:
+                        response = requests.get(health_url, timeout=5)
+                        if response.status_code == 200:
+                            logger.info("vLLM service is now ready")
+                            return True
+                    except Exception as e:
+                        logger.debug(f"Waiting for vLLM to be ready: {e}")
+
+                    time.sleep(3)
+
+                logger.error(f"vLLM service failed to start within {startup_timeout} seconds")
+                return False
+
         return False

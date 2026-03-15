@@ -1,0 +1,27 @@
+2026-03-15 18:03:37,352 [INFO] utils.helpers: Logging initialized. Log file: logs/iris_20260315_180337.log
+2026-03-15 18:03:37,352 [INFO] __main__: ============================================================
+2026-03-15 18:03:37,352 [INFO] __main__: Starting IRIS Update Cycle
+2026-03-15 18:03:37,352 [INFO] __main__: ============================================================
+2026-03-15 18:03:37,352 [INFO] __main__: 
+[Step 1] Creating update folder...
+2026-03-15 18:03:37,352 [INFO] __main__: Update folder: /home/NagaiYoru/research/IRIS_papers/update_2026_03_15_1803
+2026-03-15 18:03:37,352 [INFO] __main__: 
+[Step 2] Loading existing paper entries...
+2026-03-15 18:03:37,353 [INFO] __main__: Found 0 existing papers in database
+2026-03-15 18:03:37,353 [INFO] __main__: 
+[Step 3] Initializing arXiv service...
+2026-03-15 18:03:37,353 [ERROR] __main__: Error during update cycle: RelevanceDate
+Traceback (most recent call last):
+  File "/home/NagaiYoru/LLM_tuning/IRIS_search/scripts/run_update_cycle.py", line 186, in run_update_cycle
+    arxiv_service = ArxivService(
+  File "/home/NagaiYoru/LLM_tuning/IRIS_search/services/arxiv_service.py", line 39, in __init__
+    self.sort_by = self._get_sort_criterion(sort_by)
+  File "/home/NagaiYoru/LLM_tuning/IRIS_search/services/arxiv_service.py", line 48, in _get_sort_criterion
+    "RelevanceDate": arxiv.SortCriterion.RelevanceDate
+  File "/usr/lib/python3.10/enum.py", line 437, in __getattr__
+    raise AttributeError(name) from None
+AttributeError: RelevanceDate
+2026-03-15 18:03:37,353 [INFO] __main__: 
+============================================================
+2026-03-15 18:03:37,353 [INFO] __main__: IRIS Update Cycle Failed
+2026-03-15 18:03:37,353 [INFO] __main__: ============================================================

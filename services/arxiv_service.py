@@ -45,7 +45,7 @@ class ArxivService:
         sort_map = {
             "SubmittedDate": arxiv.SortCriterion.SubmittedDate,
             "LastUpdatedDate": arxiv.SortCriterion.LastUpdatedDate,
-            "RelevanceDate": arxiv.SortCriterion.RelevanceDate
+            "Relevance": arxiv.SortCriterion.Relevance
         }
         return sort_map.get(sort_by, arxiv.SortCriterion.SubmittedDate)
 

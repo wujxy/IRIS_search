@@ -204,7 +204,7 @@ def run_update_cycle(config: dict):
         new_papers = filtered["new"]
         if new_papers:
             pdf_dir = update_folder / "pdfs"
-            papers_with_pdf = arxiv_service.download_papers(new_papers, pdf_dir)
+            papers_with_pdf = arxiv_service.download_pdfs(new_papers, pdf_dir)
 
             # Filter out papers where download failed
             new_papers = [
@@ -273,8 +273,8 @@ def run_update_cycle(config: dict):
                     index_backend=config["ultrarag"]["index_backend"]
                 )
 
-                # Check vLLM service
-                if qa_service.check_vllm_service():
+                # Check vLLM service with auto-start enabled
+                if qa_service.check_vllm_service(auto_start=True):
                     # Load questions
                     questions = load_questions(config["qa"]["question_set_path"])
 

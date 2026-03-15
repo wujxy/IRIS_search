@@ -5,7 +5,7 @@
 # Update Configuration
 # ============================================================================
 update:
-  interval_hours: 2  # How often to search for new papers
+  interval_hours: 1  # How often to search for new papers
 
 # ============================================================================
 # arXiv Search Configuration
@@ -21,10 +21,8 @@ arxiv:
     - sno
     - kamland
     - borexino
-    - particle detector
-    - machine learning physics
-  max_results_per_keyword: 20
-  sort_by: SubmittedDate  # Options: SubmittedDate, LastUpdatedDate, RelevanceDate
+  max_results_per_keyword: 5
+  sort_by: SubmittedDate  # Options: SubmittedDate, LastUpdatedDate, Relevance
 
 # ============================================================================
 # Storage Configuration
@@ -72,6 +70,11 @@ models:
     host: 127.0.0.1
     port: 65504
     served_model_name: llama3-3b-instruct
+    # vLLM startup parameters (used when auto_start is enabled)
+    max_model_len: 8192
+    gpu_memory_utilization: 0.7
+    tensor_parallel_size: 1
+    enforce_eager: true
 
 # ============================================================================
 # QA Configuration
