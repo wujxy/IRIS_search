@@ -61,7 +61,9 @@ class QAService:
 
         # Paths to UltraRAG components
         self.pipeline_yaml = self.ultrarag_path / "pipelines" / "online_rag_qa_batch.yaml"
-        self.parameter_template = self.ultrarag_path / "parameter" / "online_rag_qa_batch_parameter.yaml.template"
+        # Template from IRIS project (for independence from UltraRAG)
+        script_dir = Path(__file__).parent.parent.absolute()
+        self.parameter_template = script_dir / "config" / "ultrarag" / "templates" / "online_rag_qa_batch_parameter.yaml.template"
 
         # vLLM process management
         self.vllm_process = None

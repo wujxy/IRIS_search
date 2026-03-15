@@ -39,7 +39,9 @@ class IndexService:
 
         # Paths to UltraRAG components
         self.pipeline_yaml = self.ultrarag_path / "pipelines" / "offline_build_index_watch.yaml"
-        self.parameter_template = self.ultrarag_path / "parameter" / "offline_build_index_watch_parameter.yaml.template"
+        # Template from IRIS project (for independence from UltraRAG)
+        script_dir = Path(__file__).parent.parent.absolute()
+        self.parameter_template = script_dir / "config" / "ultrarag" / "templates" / "offline_build_index_watch_parameter.yaml.template"
 
         logger.info(f"Index service initialized with embedding model: {embedding_model}")
 

@@ -21,7 +21,7 @@ arxiv:
     - sno
     - kamland
     - borexino
-  max_results_per_keyword: 5
+  max_results_per_keyword: 2
   sort_by: SubmittedDate  # Options: SubmittedDate, LastUpdatedDate, Relevance
 
 # ============================================================================
