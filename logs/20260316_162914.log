@@ -1,8 +1,0 @@
-[03/16/26 16:29:14] INFO [UltraRAG.Client] Building configuration /home/NagaiYoru/LLM_tuning/IRIS_search/configs/ultrarag/pipelines/offline_build_index.yaml
-[03/16/26 16:29:14] WARNING [UltraRAG.Client] No parameter.yaml found for corpus, skipping
-[03/16/26 16:29:14] WARNING [UltraRAG.Client] No parameter.yaml found for benchmark, skipping
-[03/16/26 16:29:14] WARNING [UltraRAG.Client] No parameter.yaml found for retriever, skipping
-[03/16/26 16:29:14] WARNING [UltraRAG.Client] No parameter.yaml found for prompt, skipping
-[03/16/26 16:29:14] WARNING [UltraRAG.Client] No parameter.yaml found for generation, skipping
-[03/16/26 16:29:14] WARNING [UltraRAG.Client] No parameter.yaml found for evaluation, skipping
-[03/16/26 16:29:14] WARNING [UltraRAG.Client] No parameter.yaml found for custom, skipping
