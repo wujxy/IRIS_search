@@ -21,7 +21,7 @@ from services.arxiv_service import ArxivService
 from services.index_service import IndexService
 from services.qa_service import QAService
 from services.email_service import EmailService
-from services.deploy_server import DeployServer
+from services.deploy_service import DeployService
 from utils.helpers import (
     load_config,
     load_questions,
@@ -242,7 +242,7 @@ def run_update_cycle(config: dict):
 
         # Step 8.5: 启动基础设施（Milvus + vLLM 索引模型 + vLLM QA 模型）
         logger.info("\n[Step 8.5] Starting infrastructure...")
-        deploy_server = DeployServer(config)
+        deploy_server = DeployService(config)
 
         if not deploy_server.start_infrastructure():
             logger.error("Failed to start infrastructure")
@@ -254,7 +254,7 @@ def run_update_cycle(config: dict):
             logger.info("\n[Step 9] Building index with UltraRAG...")
 
             # 生成批次命名的 collection_name
-            collection_name = f"update_{datetime.now().strftime('%Y%m%d')}"
+            collection_name = f"update_{datetime.now().strftime('%Y_%m_%d_%H%M')}"
 
             index_service = IndexService(
                 ultrarag_path=config["ultrarag"]["ultrarag_path"],

@@ -48,8 +48,8 @@ ultrarag:
   index_storage: /home/NagaiYoru/research/IRIS_papers/index_storage
   # UltraRAG pipeline configurations
   pipelines:
-    index_watch: pipelines/offline_build_index_watch.yaml
-    qa_batch: pipelines/online_rag_qa_batch.yaml
+    index_watch: piplines/offline_build_index.yaml
+    qa_batch: piplines/online_rag_qa.yaml
 
 # ============================================================================
 # Milvus Configuration
@@ -78,27 +78,27 @@ models:
   llm_model_path: /home/NagaiYoru/LLM_model/Llama-3.2-3B-Instruct
 
   # vLLM service configuration
-vllm:
-  # QA model configuration
-  base_url: http://127.0.0.1:65504/v1
-  host: 127.0.0.1
-  port: 65504
-  served_model_name: llama3-3b-instruct
-  max_model_len: 8192
-  gpu_memory_utilization: 0.85
-  tensor_parallel_size: 1
-  enforce_eager: true
-
-  # Index model configuration (vLLM-mounted embedding model)
-  index:
-    model_name: qwen3-embedding-0.6b
+  vllm:
+    # QA model configuration
+    base_url: http://127.0.0.1:65504/v1
     host: 127.0.0.1
-    port: 65503
-    base_url: http://127.0.0.1:65503/v1
-    max_model_len: 4096
-    gpu_memory_utilization: 0.15
+    port: 65504
+    served_model_name: llama3-3b-instruct
+    max_model_len: 8192
+    gpu_memory_utilization: 0.85
     tensor_parallel_size: 1
-    served_model_name: qwen3-embedding-0.6b
+    enforce_eager: true
+
+    # Index model configuration (vLLM-mounted embedding model)
+    index:
+      model_name: qwen3-embedding-0.6b
+      host: 127.0.0.1
+      port: 65503
+      base_url: http://127.0.0.1:65503/v1
+      max_model_len: 4096
+      gpu_memory_utilization: 0.15
+      tensor_parallel_size: 1
+      served_model_name: qwen3-embedding-0.6b
 
 # ============================================================================
 # QA Configuration

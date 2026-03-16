@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from utils.helpers import load_config, setup_logging, get_latest_update_folder
 from services.qa_service import QAService
-from services.deploy_server import DeployServer
+from services.deploy_service import DeployService
 
 
 logger = logging.getLogger(__name__)
@@ -292,7 +292,7 @@ Examples:
     if args.start_infra:
         # 独立运行时启动基础设施（Milvus + vLLM 索引模型 + vLLM QA 模型）
         logger.info("Starting infrastructure...")
-        deploy_server = DeployServer(config)
+        deploy_server = DeployService(config)
 
         if not deploy_server.start_infrastructure():
             logger.error("Failed to start infrastructure")

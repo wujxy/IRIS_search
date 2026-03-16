@@ -31,7 +31,8 @@ class QAService:
         vllm_base_url: str = "http://127.0.0.1:65504/v1",
         index_vllm_base_url: str = "http://127.0.0.1:65503/v1",
         served_model_name: str = "llama3-3b-instruct",
-        system_prompt: str = "你是一个专业的UltraRAG问答助手。请一定记住使用中文回答问题,且足够专业"
+        system_prompt: str = "你是一个专业的UltraRAG问答助手。请一定记住使用中文回答问题,且足够专业",
+        collection_name: str = "iris_papers"
     ):
         """
         Initialize QA service.
@@ -45,6 +46,7 @@ class QAService:
             index_vllm_base_url: Base URL for index vLLM service
             served_model_name: Model name served by vLLM
             system_prompt: System prompt for generation
+            collection_name: Milvus collection name
         """
         self.ultrarag_path = Path(ultrarag_path).absolute()
         self.embedding_model = embedding_model
@@ -54,11 +56,13 @@ class QAService:
         self.index_vllm_base_url = index_vllm_base_url
         self.served_model_name = served_model_name
         self.system_prompt = system_prompt
+        self.collection_name = collection_name
 
         # Paths to UltraRAG components
-        self.pipeline_yaml = self.ultrarag_path / "pipelines" / "online_rag_qa_batch.yaml"
-        # Template from IRIS project (for independence from UltraRAG)
+        # Use IRIS pipeline file directly (for independence from UltraRAG)
         script_dir = Path(__file__).parent.parent.absolute()
+        self.pipeline_yaml = script_dir / "configs" / "ultrarag" / "pipelines" / "online_rag_qa.yaml"
+        # Template from IRIS project (for independence from UltraRAG)
         self.parameter_template = script_dir / "configs" / "ultrarag" / "templates" / "online_rag_qa_parameter.yaml.template"
 
         logger.info(f"QA service initialized with LLM: {generation_model}")
@@ -108,7 +112,7 @@ class QAService:
         self,
         questions: List[str],
         chunks_path: Path,
-        collection_name: str = "iris_papers"
+        collection_name: str = None
     ) -> List[Dict[str, Any]]:
         """
         Query knowledge base with multiple questions.
@@ -121,6 +125,7 @@ class QAService:
         Returns:
             List of result dictionaries with 'question' and 'answer' keys
         """
+        collection_name = collection_name or self.collection_name
         logger.info(f"Querying knowledge base with {len(questions)} questions")
 
         # Create temporary questions file
@@ -148,7 +153,7 @@ class QAService:
         self,
         questions_file: str,
         chunks_path: Path,
-        collection_name: str = "iris_papers"
+        collection_name: str = None
     ) -> Optional[List[Dict[str, Any]]]:
         """
         Run QA batch processing using UltraRAG.
@@ -161,7 +166,17 @@ class QAService:
         Returns:
             List of answers, or None if failed
         """
-        # Create runtime parameter file
+        collection_name = collection_name or self.collection_name
+
+        # Step 1: Copy IRIS pipeline to UltraRAG
+        ultrarag_pipeline_path = self._copy_pipeline_to_ultrarag()
+
+        # Step 2: Initialize UltraRAG build (creates parameter/ and server/ folders)
+        if not self._initialize_ultrarag_build(ultrarag_pipeline_path):
+            logger.error("UltraRAG build initialization failed")
+            return None
+
+        # Step 3: Create runtime parameter file
         runtime_param = self.ultrarag_path / "parameter" / "_runtime" / "online_rag_qa_parameter.yaml"
 
         replacements = {
@@ -174,7 +189,7 @@ class QAService:
             "SERVED_MODEL_NAME": self.served_model_name,
             "SYSTEM_PROMPT": self.system_prompt,
             "INDEX_PATH": "",
-            "MILVUS_URI": "tcp://127.0.0.1:29901",
+            "MILVUS_URI": "http://localhost:29901",
             "COLLECTION_NAME": collection_name,
             "INDEX_BASE_URL": self.index_vllm_base_url,
             "INDEX_MODEL_NAME": "qwen3-embedding-0.6b",
@@ -186,14 +201,14 @@ class QAService:
             replacements
         )
 
-        # Also copy to location where UltraRAG expects it
+        # Step 4: Copy to location where UltraRAG expects it
         target_param = self.ultrarag_path / "pipelines" / "parameter" / "online_rag_qa_parameter.yaml"
         target_param.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(runtime_param, target_param)
         logger.info(f"Copied parameter file to: {target_param}")
 
-        # Run UltraRAG pipeline
-        success = self._run_ultrarag_pipeline(self.pipeline_yaml)
+        # Step 5: Run UltraRAG pipeline
+        success = self._run_ultrarag_pipeline(ultrarag_pipeline_path)
 
         if not success:
             logger.error("QA pipeline failed")
@@ -221,6 +236,79 @@ class QAService:
             f.write(content)
 
         logger.debug(f"Created runtime parameter: {output_path}")
+
+    def _copy_pipeline_to_ultrarag(self) -> Path:
+        """Copy IRIS pipeline file to UltraRAG pipelines directory.
+
+        Returns:
+            Path to the copied pipeline in UltraRAG
+        """
+        from datetime import datetime
+        import shutil
+
+        # Copy pipeline file directly (no timestamp, just overwrite)
+        ultrarag_pipeline_dir = self.ultrarag_path / "pipelines"
+        target_path = ultrarag_pipeline_dir / self.pipeline_yaml.name
+
+        # Ensure target directory exists
+        ultrarag_pipeline_dir.mkdir(parents=True, exist_ok=True)
+
+        # Copy pipeline file
+        shutil.copy(str(self.pipeline_yaml), str(target_path))
+        logger.info(f"Copied IRIS pipeline to UltraRAG: {target_path}")
+
+        return target_path
+
+    def _initialize_ultrarag_build(self, pipeline_path: Path) -> bool:
+        """Initialize UltraRAG by running ultrarag build command.
+
+        Args:
+            pipeline_path: Path to the pipeline file in UltraRAG
+
+        Returns:
+            True if successful, False otherwise
+        """
+        logger.info(f"Initializing UltraRAG build: {pipeline_path}")
+
+        # Find ultrarag command (prefer venv)
+        venv_ultrarag = self.ultrarag_path / ".venv" / "bin" / "ultrarag"
+        venv_bin = self.ultrarag_path / ".venv" / "bin"
+
+        if venv_ultrarag.exists():
+            ultrarag_cmd = str(venv_ultrarag)
+            env = os.environ.copy()
+            env["PATH"] = str(venv_bin) + os.pathsep + env.get("PATH", "")
+            env["PYTHONPATH"] = str(self.ultrarag_path / "src") + os.pathsep + env.get("PYTHONPATH", "")
+            env["VIRTUAL_ENV"] = str(self.ultrarag_path / ".venv")
+        else:
+            ultrarag_cmd = "ultrarag"
+            env = None
+
+        try:
+            result = subprocess.run(
+                [ultrarag_cmd, "build", str(pipeline_path)],
+                cwd=self.ultrarag_path,
+                capture_output=True,
+                text=True,
+                check=False,
+                env=env
+            )
+
+            if result.stdout:
+                logger.info(f"UltraRAG build stdout:\n{result.stdout}")
+            if result.stderr:
+                logger.warning(f"UltraRAG build stderr:\n{result.stderr}")
+
+            if result.returncode != 0:
+                logger.error(f"UltraRAG build failed with code {result.returncode}")
+                return False
+
+            logger.info("UltraRAG build completed successfully")
+            return True
+
+        except Exception as e:
+            logger.error(f"Error initializing UltraRAG build: {e}")
+            return False
 
     def _run_ultrarag_pipeline(self, pipeline_yaml: Path) -> bool:
         """Run UltraRAG run command."""

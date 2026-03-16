@@ -1,0 +1,301 @@
+2026-03-16 18:14:29,685 [INFO] utils.helpers: Logging initialized. Log file: logs/iris_20260316_181429.log
+2026-03-16 18:14:29,685 [INFO] __main__: ============================================================
+2026-03-16 18:14:29,685 [INFO] __main__: Starting IRIS Update Cycle
+2026-03-16 18:14:29,685 [INFO] __main__: ============================================================
+2026-03-16 18:14:29,685 [INFO] __main__: 
+[Step 1] Creating update folder...
+2026-03-16 18:14:29,685 [INFO] __main__: Update folder: /home/NagaiYoru/research/IRIS_papers/update_2026_03_16_1814
+2026-03-16 18:14:29,685 [INFO] __main__: 
+[Step 2] Loading existing paper entries...
+2026-03-16 18:14:29,686 [INFO] __main__: Found 0 existing papers in database
+2026-03-16 18:14:29,686 [INFO] __main__: 
+[Step 3] Initializing arXiv service...
+2026-03-16 18:14:29,686 [INFO] __main__: 
+[Step 4] Searching arXiv for papers...
+2026-03-16 18:14:29,686 [INFO] services.arxiv_service: Searching arXiv with keywords: ['neutrino', 'juno', 'dune', 'hyper-kamiokande', 'super-kamiokande', 'icecube', 'sno', 'kamland', 'borexino']
+2026-03-16 18:14:29,686 [INFO] arxiv: Requesting page (first: True, try: 0): https://export.arxiv.org/api/query?search_query=neutrino+OR+juno+OR+dune+OR+hyper-kamiokande+OR+super-kamiokande+OR+icecube+OR+sno+OR+kamland+OR+borexino&id_list=&sortBy=submittedDate&sortOrder=descending&start=0&max_results=100
+2026-03-16 18:14:30,587 [INFO] arxiv: Got first page: 100 of 41680 total results
+2026-03-16 18:14:30,588 [INFO] services.arxiv_service: Found 2 papers from arXiv
+2026-03-16 18:14:30,588 [INFO] __main__: 
+[Step 5] Filtering papers...
+2026-03-16 18:14:30,588 [INFO] services.arxiv_service: Filtering results: 2 new, 0 duplicates, 0 review papers
+2026-03-16 18:14:30,588 [INFO] __main__: 
+[Step 6] Downloading PDFs...
+2026-03-16 18:14:30,588 [INFO] services.arxiv_service: Downloading PDFs for 2 papers...
+2026-03-16 18:14:33,637 [INFO] services.arxiv_service: Downloaded PDF: A 2% determination of $N_{\rm eff}$ from primordia... -> 2603.13226v1.pdf
+2026-03-16 18:14:35,271 [INFO] services.arxiv_service: Downloaded PDF: Negative Masses and Spatial Curvature: Alleviating... -> 2603.13208v1.pdf
+2026-03-16 18:14:35,273 [INFO] services.arxiv_service: Successfully downloaded 2/2 PDFs
+2026-03-16 18:14:35,273 [INFO] __main__: 
+[Step 7] Saving metadata...
+2026-03-16 18:14:35,274 [INFO] __main__: 
+[Step 8] Generating update log...
+2026-03-16 18:14:35,275 [INFO] __main__: 
+[Step 8.5] Starting infrastructure...
+2026-03-16 18:14:35,275 [INFO] services.deploy_service: VllmControl initialized for index model
+2026-03-16 18:14:35,275 [INFO] services.deploy_service: VllmControl initialized for qa model
+2026-03-16 18:14:35,275 [INFO] services.deploy_service: DeployServer initialized
+2026-03-16 18:14:35,331 [INFO] services.deploy_service: Starting Milvus container: milvus-ultrarag
+2026-03-16 18:14:35,347 [INFO] services.deploy_service: Container exists, starting existing container
+2026-03-16 18:14:35,617 [INFO] services.deploy_service: Milvus container started
+2026-03-16 18:14:35,617 [INFO] services.deploy_service: Waiting for Milvus to be ready...
+2026-03-16 18:14:45,627 [INFO] services.deploy_service: Starting vLLM models...
+2026-03-16 18:14:45,627 [INFO] services.deploy_service: Checking vLLM index service at http://127.0.0.1:65503/v1/models...
+2026-03-16 18:14:51,638 [ERROR] services.deploy_service: vLLM index service not ready after 5 seconds
+2026-03-16 18:14:51,639 [INFO] services.deploy_service: Starting vLLM index with model: /home/NagaiYoru/LLM_model/Qwen3-Embedding-0.6B
+2026-03-16 18:14:51,639 [INFO] services.deploy_service: vLLM command: /home/NagaiYoru/LLM_tuning/UltraRAG/.venv/bin/python -m vllm.entrypoints.openai.api_server --model /home/NagaiYoru/LLM_model/Qwen3-Embedding-0.6B --trust-remote-code --host 127.0.0.1 --port 65503 --max-model-len 4096 --gpu-memory-utilization 0.15 --tensor-parallel-size 1 --served-model-name qwen3-embedding-0.6b --enforce-eager
+2026-03-16 18:14:51,640 [INFO] services.deploy_service: vLLM index started with PID: 456957
+2026-03-16 18:14:51,641 [INFO] services.deploy_service: Checking vLLM qa service at http://127.0.0.1:65504/v1/models...
+2026-03-16 18:14:57,651 [ERROR] services.deploy_service: vLLM qa service not ready after 5 seconds
+2026-03-16 18:14:57,652 [INFO] services.deploy_service: Starting vLLM qa with model: /home/NagaiYoru/LLM_model/Llama-3.2-3B-Instruct
+2026-03-16 18:14:57,652 [INFO] services.deploy_service: vLLM command: /home/NagaiYoru/LLM_tuning/UltraRAG/.venv/bin/python -m vllm.entrypoints.openai.api_server --model /home/NagaiYoru/LLM_model/Llama-3.2-3B-Instruct --trust-remote-code --host 127.0.0.1 --port 65504 --max-model-len 8192 --gpu-memory-utilization 0.85 --tensor-parallel-size 1 --served-model-name llama3-3b-instruct --enforce-eager
+2026-03-16 18:14:57,652 [INFO] services.deploy_service: vLLM qa started with PID: 457071
+2026-03-16 18:14:57,652 [INFO] services.deploy_service: Infrastructure started successfully
+2026-03-16 18:14:57,652 [INFO] __main__: 
+[Step 9] Building index with UltraRAG...
+2026-03-16 18:14:57,652 [INFO] services.index_service: Index service initialized with embedding model: /home/NagaiYoru/LLM_model/Qwen3-Embedding-0.6B
+2026-03-16 18:14:57,652 [INFO] services.index_service: Starting index build for PDFs in: /home/NagaiYoru/research/IRIS_papers/update_2026_03_16_1814/pdfs
+2026-03-16 18:14:57,652 [INFO] services.index_service: Output directory: /home/NagaiYoru/research/IRIS_papers/update_2026_03_16_1814/index_storage
+2026-03-16 18:14:57,653 [INFO] services.index_service:   Chunks: /home/NagaiYoru/research/IRIS_papers/update_2026_03_16_1814/index_storage/chunks.jsonl
+2026-03-16 18:14:57,653 [INFO] services.index_service:   Index: Milvus
+2026-03-16 18:14:57,653 [INFO] services.index_service:   Collection: update_20260316
+2026-03-16 18:14:57,653 [INFO] services.index_service:   Overwrite: False
+2026-03-16 18:14:57,662 [INFO] services.index_service: Copied IRIS pipeline to UltraRAG: /home/NagaiYoru/LLM_tuning/UltraRAG/pipelines/offline_build_index.yaml
+2026-03-16 18:14:57,662 [INFO] services.index_service: Initializing UltraRAG build: /home/NagaiYoru/LLM_tuning/UltraRAG/pipelines/offline_build_index.yaml
+2026-03-16 18:15:08,814 [WARNING] services.index_service: UltraRAG build stderr:
+
+╭─  UltraRAG v0.3.0  ──────────────────────────────────────────────────────────────╮
+│                                                                                  │
+│   ███   ███ ███    █████████ ████████    █████   ████████    █████    ███████    │
+│   ███   ███ ███       ███    ███   ███  ███ ███  ███   ███  ███ ███  ███   ███   │
+│   ███   ███ ███       ███    ███   ███ ███   ███ ███   ███ ███   ███ ███         │
+│   ███   ███ ███       ███    ████████  █████████ ████████  █████████ ███  ████   │
+│   ███   ███ ███       ███    ███  ███  ███   ███ ███  ███  ███   ███ ███   ███   │
+│   ███   ███ ███       ███    ███   ███ ███   ███ ███   ███ ███   ███ ███   ███   │
+│    ███████  █████████ ███    ███   ███ ███   ███ ███   ███ ███   ███  ███████    │
+│                                                                                  │
+│                                                                                  │
+│       ▶  Pipeline        Building                                                │
+│                                                                                  │
+│       ◆  UltraRAG        v0.3.0                                                  │
+│       ◇  FastMCP         v2.14.3                                                 │
+│       ◇  MCP             v1.25.0                                                 │
+│                                                                                  │
+│       ➢  Docs            https://ultrarag.openbmb.cn/                            │
+│                                                                                  │
+│       ❖  Python          3.12.12                                                 │
+│       ▤  System          Linux x86_64                                            │
+│                                                                                  │
+╰─────────────────────────────────────────────────────────  Press Ctrl+C to exit  ─╯
+
+[03/16/26 18:14:59] INFO     [UltraRAG.Client] Building configuration                                                          client.py:869
+                             /home/NagaiYoru/LLM_tuning/UltraRAG/pipelines/offline_build_index.yaml                                         
+[03/16/26 18:14:59] INFO     [UltraRAG.Client] Building server configs                                                         client.py:951
+[03/16/26 18:15:00] INFO     Starting MCP server 'corpus' with    server.py:2507
+                             transport 'stdio'                                  
+[03/16/26 18:15:01] INFO     Starting MCP server 'benchmark' with server.py:2507
+                             transport 'stdio'                                  
+[03/16/26 18:15:02] INFO     Starting MCP server 'retriever' with server.py:2507
+                             transport 'stdio'                                  
+[03/16/26 18:15:03] INFO     Starting MCP server 'prompt' with    server.py:2507
+                             transport 'stdio'                                  
+[03/16/26 18:15:05] INFO     Starting MCP server 'generation'     server.py:2507
+                             with transport 'stdio'                             
+[03/16/26 18:15:07] INFO     Starting MCP server 'evaluation'     server.py:2507
+                             with transport 'stdio'                             
+[03/16/26 18:15:08] INFO     Starting MCP server 'custom' with    server.py:2507
+                             transport 'stdio'                                  
+[03/16/26 18:15:08] INFO     [UltraRAG.Client] server.yaml for corpus has been built already                                   client.py:971
+[03/16/26 18:15:08] INFO     [UltraRAG.Client] server.yaml for retriever has been built already                                client.py:971
+[03/16/26 18:15:08] INFO     [UltraRAG.Client] Saving all parameters to                                                       client.py:1075
+                             /home/NagaiYoru/LLM_tuning/UltraRAG/pipelines/parameter/offline_build_index_parameter.yaml                     
+[03/16/26 18:15:08] INFO     [UltraRAG.Client] Saving all server configs to                                                   client.py:1077
+                             /home/NagaiYoru/LLM_tuning/UltraRAG/pipelines/server/offline_build_index_server.yaml                           
+[03/16/26 18:15:08] INFO     [UltraRAG.Client] All parameters have been saved in                                              client.py:1081
+                             /home/NagaiYoru/LLM_tuning/UltraRAG/pipelines/parameter/offline_build_index_parameter.yaml                     
+[03/16/26 18:15:08] INFO     [UltraRAG.Client] All server configurations have been saved in                                   client.py:1089
+                             /home/NagaiYoru/LLM_tuning/UltraRAG/pipelines/server/offline_build_index_server.yaml                           
+
+2026-03-16 18:15:08,814 [INFO] services.index_service: UltraRAG build completed successfully
+2026-03-16 18:15:08,814 [INFO] services.index_service: Created runtime parameter: /home/NagaiYoru/LLM_tuning/UltraRAG/parameter/_runtime/offline_build_index_parameter.yaml
+2026-03-16 18:15:08,814 [INFO] services.index_service: Copied parameter file to: /home/NagaiYoru/LLM_tuning/UltraRAG/pipelines/parameter/offline_build_index_parameter.yaml
+2026-03-16 18:15:08,814 [INFO] services.index_service: Running UltraRAG pipeline: /home/NagaiYoru/LLM_tuning/UltraRAG/pipelines/offline_build_index.yaml
+2026-03-16 18:15:22,521 [WARNING] services.index_service: UltraRAG run stderr:
+
+╭─  UltraRAG v0.3.0  ──────────────────────────────────────────────────────────────╮
+│                                                                                  │
+│   ███   ███ ███    █████████ ████████    █████   ████████    █████    ███████    │
+│   ███   ███ ███       ███    ███   ███  ███ ███  ███   ███  ███ ███  ███   ███   │
+│   ███   ███ ███       ███    ███   ███ ███   ███ ███   ███ ███   ███ ███         │
+│   ███   ███ ███       ███    ████████  █████████ ████████  █████████ ███  ████   │
+│   ███   ███ ███       ███    ███  ███  ███   ███ ███  ███  ███   ███ ███   ███   │
+│   ███   ███ ███       ███    ███   ███ ███   ███ ███   ███ ███   ███ ███   ███   │
+│    ███████  █████████ ███    ███   ███ ███   ███ ███   ███ ███   ███  ███████    │
+│                                                                                  │
+│                                                                                  │
+│       ▶  Pipeline        offline_build_index                                     │
+│                                                                                  │
+│       ◆  UltraRAG        v0.3.0                                                  │
+│       ◇  FastMCP         v2.14.3                                                 │
+│       ◇  MCP             v1.25.0                                                 │
+│                                                                                  │
+│       ➢  Docs            https://ultrarag.openbmb.cn/                            │
+│                                                                                  │
+│       ❖  Python          3.12.12                                                 │
+│       ▤  System          Linux x86_64                                            │
+│                                                                                  │
+╰─────────────────────────────────────────────────────────  Press Ctrl+C to exit  ─╯
+
+[03/16/26 18:15:10] INFO     [UltraRAG.Client] Executing pipeline with configuration                                          client.py:1109
+                             /home/NagaiYoru/LLM_tuning/UltraRAG/pipelines/offline_build_index.yaml                                         
+[03/16/26 18:15:10] INFO     [UltraRAG.Client] Initializing MCP Client...                                                     client.py:1209
+[03/16/26 18:15:11] INFO     Starting MCP server 'corpus' with    server.py:2507
+                             transport 'stdio'                                  
+[03/16/26 18:15:13] INFO     Starting MCP server 'retriever' with server.py:2507
+                             transport 'stdio'                                  
+[03/16/26 18:15:13] INFO     [UltraRAG.Client] Available tools: ['corpus_build_text_corpus', 'corpus_build_image_corpus',     client.py:1793
+                             'corpus_mineru_parse', 'corpus_build_mineru_corpus', 'corpus_chunk_documents',                                 
+                             'retriever_retriever_init', 'retriever_retriever_embed', 'retriever_retriever_index',                          
+                             'retriever_retriever_search', 'retriever_retriever_batch_search', 'retriever_bm25_index',                      
+                             'retriever_bm25_search', 'retriever_retriever_deploy_search', 'retriever_retriever_websearch',                 
+                             'retriever_retriever_batch_websearch']                                                                         
+[03/16/26 18:15:13] INFO     [UltraRAG.Client] Executing step: corpus.build_text_corpus                                       client.py:1359
+
+Building text corpus:   0%|          | 0/2 [00:00<?, ?file/s]
+Building text corpus:  50%|█████     | 1/2 [00:00<00:00,  6.22file/s]
+Building text corpus: 100%|██████████| 2/2 [00:00<00:00,  5.00file/s]
+Building text corpus: 100%|██████████| 2/2 [00:00<00:00,  5.15file/s]
+[03/16/26 18:15:13] INFO     [UltraRAG.corpus] Built text corpus:  corpus.py:328
+                             /home/NagaiYoru/research/IRIS_papers/              
+                             update_2026_03_16_1814/index_storage/              
+                             .intermediate/corpus.jsonl (rows=2,                
+                             from=dir:                                          
+                             /home/NagaiYoru/research/IRIS_papers/              
+                             update_2026_03_16_1814/pdfs)                       
+[03/16/26 18:15:13] INFO     [UltraRAG.Client] Executing step: corpus.chunk_documents                                         client.py:1359
+[03/16/26 18:15:13] INFO     [UltraRAG.corpus] Chunking Config:    corpus.py:793
+                             backend=sentence, size=512,                        
+                             overlap=50, tokenizer=character                    
+
+Chunking (sentence):   0%|          | 0/2 [00:00<?, ?doc/s]
+Chunking (sentence): 100%|██████████| 2/2 [00:00<00:00, 483.27doc/s]
+[03/16/26 18:15:13] INFO     [UltraRAG.Client] Executing step: retriever.retriever_init                                       client.py:1359
+[03/16/26 18:15:13] INFO     [UltraRAG.retriever] [retriever]   retriever.py:118
+                             Initializing in DEMO mode.                         
+[03/16/26 18:15:13] INFO     [UltraRAG.retriever] [retriever]   retriever.py:131
+                             Demo mode enforced:                                
+                             Backend=OpenAI, Index=Milvus.                      
+[03/16/26 18:15:13] INFO     [UltraRAG.retriever] [retriever]   retriever.py:156
+                             Set CUDA_VISIBLE_DEVICES=0,                        
+                             device_num=1                                       
+[03/16/26 18:15:13] INFO     [UltraRAG.retriever] [openai]      retriever.py:232
+                             OpenAI client initialized                          
+                             (model='qwen3-embedding-0.6b',                     
+                             base='http://127.0.0.1:65503/v1')                  
+[03/16/26 18:15:13] INFO     [UltraRAG.retriever] [retriever]   retriever.py:324
+                             Demo/Milvus mode: Skipping memory                  
+                             corpus load (Data stored in DB).                   
+[03/16/26 18:15:14] INFO     [UltraRAG.retriever] [index]       retriever.py:346
+                             Initialized backend 'milvus'.                      
+[03/16/26 18:15:14] INFO     [UltraRAG.Client] Executing step: retriever.retriever_embed                                      client.py:1359
+[03/16/26 18:15:14] WARNING  [UltraRAG.retriever] [retriever]   retriever.py:400
+                             'retriever_embed' is ignored in                    
+                             Demo mode. Embeddings are                          
+                             generated on-the-fly during                        
+                             'retriever_index'.                                 
+[03/16/26 18:15:14] INFO     [UltraRAG.Client] Executing step: retriever.retriever_index                                      client.py:1359
+[03/16/26 18:15:14] INFO     [UltraRAG.retriever] [Demo]        retriever.py:604
+                             Indexing JSONL:                                    
+                             /home/NagaiYoru/research/IRIS_pape                 
+                             rs/update_2026_03_16_1814/index_st                 
+                             orage/chunks.jsonl -> Collection:                  
+                             update_20260316                                    
+[03/16/26 18:15:14] INFO     [UltraRAG.retriever] [Demo]        retriever.py:674
+                             Embedding 229 chunks...                            
+
+[Demo] Processing:   0%|          | 0/229 [00:00<?, ?it/s]
+[Demo] Processing:   0%|          | 1/229 [00:00<01:23,  2.73it/s]
+[Demo] Processing:   2%|▏         | 5/229 [00:00<00:17, 12.93it/s]
+[Demo] Processing:   4%|▍         | 9/229 [00:00<00:10, 20.50it/s]
+[Demo] Processing:   6%|▌         | 14/229 [00:00<00:07, 27.26it/s]
+[Demo] Processing:   8%|▊         | 18/229 [00:00<00:07, 29.93it/s]
+[Demo] Processing:  10%|█         | 23/229 [00:00<00:06, 33.90it/s]
+[Demo] Processing:  12%|█▏        | 28/229 [00:01<00:05, 35.66it/s]
+[Demo] Processing:  14%|█▍        | 32/229 [00:01<00:05, 34.97it/s]
+[Demo] Processing:  16%|█▌        | 36/229 [00:01<00:05, 35.90it/s]
+[Demo] Processing:  17%|█▋        | 40/229 [00:01<00:05, 36.86it/s]
+[Demo] Processing:  20%|█▉        | 45/229 [00:01<00:04, 38.17it/s]
+[Demo] Processing:  21%|██▏       | 49/229 [00:01<00:04, 38.01it/s]
+[Demo] Processing:  23%|██▎       | 53/229 [00:01<00:04, 36.56it/s]
+[Demo] Processing:  25%|██▌       | 58/229 [00:01<00:04, 37.90it/s]
+[Demo] Processing:  27%|██▋       | 62/229 [00:01<00:04, 36.55it/s]
+[Demo] Processing:  29%|██▉       | 66/229 [00:02<00:04, 36.28it/s]
+[Demo] Processing:  31%|███       | 71/229 [00:02<00:04, 38.06it/s]
+[Demo] Processing:  33%|███▎      | 76/229 [00:02<00:03, 39.43it/s]
+[Demo] Processing:  35%|███▍      | 80/229 [00:02<00:03, 38.69it/s]
+[Demo] Processing:  37%|███▋      | 84/229 [00:02<00:03, 38.79it/s]
+[Demo] Processing:  39%|███▉      | 89/229 [00:02<00:03, 40.07it/s]
+[Demo] Processing:  41%|████      | 94/229 [00:02<00:03, 40.88it/s]
+[Demo] Processing:  43%|████▎     | 99/229 [00:02<00:03, 40.51it/s]
+[Demo] Processing:  45%|████▌     | 104/229 [00:03<00:03, 40.75it/s]
+[Demo] Processing:  48%|████▊     | 109/229 [00:03<00:02, 40.92it/s]
+[Demo] Processing:  50%|████▉     | 114/229 [00:03<00:02, 41.33it/s]
+[Demo] Processing:  52%|█████▏    | 119/229 [00:03<00:02, 41.05it/s]
+[Demo] Processing:  54%|█████▍    | 124/229 [00:03<00:02, 41.86it/s]
+[Demo] Processing:  56%|█████▋    | 129/229 [00:03<00:02, 42.45it/s]
+[Demo] Processing:  59%|█████▊    | 134/229 [00:03<00:02, 41.77it/s]
+[Demo] Processing:  61%|██████    | 139/229 [00:03<00:02, 42.66it/s]
+[Demo] Processing:  63%|██████▎   | 144/229 [00:03<00:02, 42.32it/s]
+[Demo] Processing:  65%|██████▌   | 149/229 [00:04<00:01, 41.83it/s]
+[Demo] Processing:  67%|██████▋   | 154/229 [00:04<00:01, 42.69it/s]
+[Demo] Processing:  69%|██████▉   | 159/229 [00:04<00:01, 43.36it/s]
+[Demo] Processing:  72%|███████▏  | 164/229 [00:04<00:01, 44.10it/s]
+[Demo] Processing:  74%|███████▍  | 169/229 [00:04<00:01, 44.41it/s]
+[Demo] Processing:  76%|███████▌  | 174/229 [00:04<00:01, 44.95it/s]
+[Demo] Processing:  78%|███████▊  | 179/229 [00:04<00:01, 45.29it/s]
+[Demo] Processing:  80%|████████  | 184/229 [00:04<00:00, 45.44it/s]
+[Demo] Processing:  83%|████████▎ | 189/229 [00:04<00:00, 45.00it/s]
+[Demo] Processing:  85%|████████▍ | 194/229 [00:05<00:00, 44.68it/s]
+[Demo] Processing:  87%|████████▋ | 199/229 [00:05<00:00, 43.80it/s]
+[Demo] Processing:  89%|████████▉ | 204/229 [00:05<00:00, 44.15it/s]
+[Demo] Processing:  91%|█████████▏| 209/229 [00:05<00:00, 41.93it/s]
+[Demo] Processing:  93%|█████████▎| 214/229 [00:05<00:00, 42.71it/s]
+[Demo] Processing:  96%|█████████▌| 219/229 [00:05<00:00, 43.27it/s]
+[Demo] Processing:  98%|█████████▊| 224/229 [00:05<00:00, 43.99it/s]
+[Demo] Processing: 100%|██████████| 229/229 [00:05<00:00, 44.75it/s]
+[Demo] Processing: 100%|██████████| 229/229 [00:05<00:00, 38.97it/s]
+[03/16/26 18:15:20] INFO     [UltraRAG.retriever] [Demo]        retriever.py:707
+                             Inserting into collection                          
+                             'update_20260316'...                               
+[03/16/26 18:15:20] INFO     [UltraRAG.retriever] [milvus] milvus_backend.py:164
+                             Creating Demo Schema for                           
+                             'update_20260316'...                               
+[03/16/26 18:15:21] INFO     [UltraRAG.retriever] [milvus] milvus_backend.py:205
+                             Successfully created                               
+                             collection 'update_20260316'.                      
+[03/16/26 18:15:21] INFO     [UltraRAG.retriever] [milvus] milvus_backend.py:272
+                             Inserting 229 vectors into                         
+                             'update_20260316'.                                 
+
+[milvus] Uploading:   0%|          | 0/229 [00:00<?, ?vec/s]
+[milvus] Uploading: 100%|██████████| 229/229 [00:00<00:00, 7512.68vec/s]
+[03/16/26 18:15:22] INFO     [UltraRAG.retriever] [milvus] milvus_backend.py:306
+                             Index ready on collection                          
+                             'update_20260316'.                                 
+[03/16/26 18:15:22] INFO     [UltraRAG.Client] Pipeline execution completed.                                                  client.py:1800
+[03/16/26 18:15:22] INFO     [UltraRAG.Client] Memory output saved to                                                          client.py:845
+                             output/memory_nq_offline_build_index_20260316_181522.json                                                      
+
+2026-03-16 18:15:22,522 [INFO] services.index_service: UltraRAG pipeline completed successfully
+2026-03-16 18:15:22,522 [INFO] services.index_service: Index build completed successfully
+2026-03-16 18:15:22,524 [INFO] __main__: Index created: 229 chunks
+2026-03-16 18:15:22,524 [INFO] __main__: 
+[Step 10] QA processing...
+2026-03-16 18:15:22,524 [ERROR] __main__: Error during update cycle: 'vllm'
+Traceback (most recent call last):
+  File "/home/NagaiYoru/LLM_tuning/IRIS_search/scripts/run_update_cycle.py", line 287, in run_update_cycle
+    vllm_base_url=config["models"]["vllm"]["base_url"],
+KeyError: 'vllm'
+2026-03-16 18:15:22,525 [INFO] __main__: 
+============================================================
+2026-03-16 18:15:22,526 [INFO] __main__: IRIS Update Cycle Failed
+2026-03-16 18:15:22,526 [INFO] __main__: ============================================================

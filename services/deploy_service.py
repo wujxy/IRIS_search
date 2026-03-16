@@ -158,25 +158,25 @@ class VllmControl:
         self.model_type = model_type
 
         if model_type == "index":
-            self.model_name = config["vllm"]["index"]["model_name"]
-            self.host = config["vllm"]["index"]["host"]
-            self.port = config["vllm"]["index"]["port"]
-            self.base_url = config["vllm"]["index"]["base_url"]
-            self.served_model_name = config["vllm"]["index"]["served_model_name"]
-            self.max_model_len = config["vllm"]["index"]["max_model_len"]
-            self.gpu_memory_utilization = config["vllm"]["index"]["gpu_memory_utilization"]
+            self.model_name = config["models"]["vllm"]["index"]["model_name"]
+            self.host = config["models"]["vllm"]["index"]["host"]
+            self.port = config["models"]["vllm"]["index"]["port"]
+            self.base_url = config["models"]["vllm"]["index"]["base_url"]
+            self.served_model_name = config["models"]["vllm"]["index"]["served_model_name"]
+            self.max_model_len = config["models"]["vllm"]["index"]["max_model_len"]
+            self.gpu_memory_utilization = config["models"]["vllm"]["index"]["gpu_memory_utilization"]
             self.tensor_parallel_size = 1
         else:  # qa
-            self.model_name = config["vllm"]["served_model_name"]
-            self.host = config["vllm"]["host"]
-            self.port = config["vllm"]["port"]
-            self.base_url = config["vllm"]["base_url"]
-            self.served_model_name = config["vllm"]["served_model_name"]
-            self.max_model_len = config["vllm"]["max_model_len"]
-            self.gpu_memory_utilization = config["vllm"]["gpu_memory_utilization"]
-            self.tensor_parallel_size = config["vllm"]["tensor_parallel_size"]
+            self.model_name = config["models"]["vllm"]["served_model_name"]
+            self.host = config["models"]["vllm"]["host"]
+            self.port = config["models"]["vllm"]["port"]
+            self.base_url = config["models"]["vllm"]["base_url"]
+            self.served_model_name = config["models"]["vllm"]["served_model_name"]
+            self.max_model_len = config["models"]["vllm"]["max_model_len"]
+            self.gpu_memory_utilization = config["models"]["vllm"]["gpu_memory_utilization"]
+            self.tensor_parallel_size = config["models"]["vllm"]["tensor_parallel_size"]
 
-        self.enforce_eager = config["vllm"].get("enforce_eager", True)
+        self.enforce_eager = config["models"]["vllm"].get("enforce_eager", True)
 
         # Model path
         self.ultrarag_path = Path(config["ultrarag"]["ultrarag_path"])
@@ -305,7 +305,7 @@ class VllmControl:
         return True
 
 
-class DeployServer:
+class DeployService:
     """Deployment server controller, unified management of Milvus and vLLM."""
 
     def __init__(self, config: dict):

@@ -1,0 +1,83 @@
+2026-03-16 16:41:30,022 [INFO] utils.helpers: Logging initialized. Log file: logs/iris_20260316_164130.log
+2026-03-16 16:41:30,022 [INFO] __main__: ============================================================
+2026-03-16 16:41:30,022 [INFO] __main__: Starting IRIS Update Cycle
+2026-03-16 16:41:30,022 [INFO] __main__: ============================================================
+2026-03-16 16:41:30,022 [INFO] __main__: 
+[Step 1] Creating update folder...
+2026-03-16 16:41:30,022 [INFO] __main__: Update folder: /home/NagaiYoru/research/IRIS_papers/update_2026_03_16_1641
+2026-03-16 16:41:30,022 [INFO] __main__: 
+[Step 2] Loading existing paper entries...
+2026-03-16 16:41:30,022 [INFO] __main__: Found 0 existing papers in database
+2026-03-16 16:41:30,022 [INFO] __main__: 
+[Step 3] Initializing arXiv service...
+2026-03-16 16:41:30,022 [INFO] __main__: 
+[Step 4] Searching arXiv for papers...
+2026-03-16 16:41:30,022 [INFO] services.arxiv_service: Searching arXiv with keywords: ['neutrino', 'juno', 'dune', 'hyper-kamiokande', 'super-kamiokande', 'icecube', 'sno', 'kamland', 'borexino']
+2026-03-16 16:41:30,022 [INFO] arxiv: Requesting page (first: True, try: 0): https://export.arxiv.org/api/query?search_query=neutrino+OR+juno+OR+dune+OR+hyper-kamiokande+OR+super-kamiokande+OR+icecube+OR+sno+OR+kamland+OR+borexino&id_list=&sortBy=submittedDate&sortOrder=descending&start=0&max_results=100
+2026-03-16 16:41:31,009 [INFO] arxiv: Got first page: 100 of 41680 total results
+2026-03-16 16:41:31,010 [INFO] services.arxiv_service: Found 2 papers from arXiv
+2026-03-16 16:41:31,010 [INFO] __main__: 
+[Step 5] Filtering papers...
+2026-03-16 16:41:31,010 [INFO] services.arxiv_service: Filtering results: 2 new, 0 duplicates, 0 review papers
+2026-03-16 16:41:31,010 [INFO] __main__: 
+[Step 6] Downloading PDFs...
+2026-03-16 16:41:31,010 [INFO] services.arxiv_service: Downloading PDFs for 2 papers...
+2026-03-16 16:41:33,521 [INFO] services.arxiv_service: Downloaded PDF: A 2% determination of $N_{\rm eff}$ from primordia... -> 2603.13226v1.pdf
+2026-03-16 16:41:35,048 [INFO] services.arxiv_service: Downloaded PDF: Negative Masses and Spatial Curvature: Alleviating... -> 2603.13208v1.pdf
+2026-03-16 16:41:35,048 [INFO] services.arxiv_service: Successfully downloaded 2/2 PDFs
+2026-03-16 16:41:35,048 [INFO] __main__: 
+[Step 7] Saving metadata...
+2026-03-16 16:41:35,048 [INFO] __main__: 
+[Step 8] Generating update log...
+2026-03-16 16:41:35,049 [INFO] __main__: 
+[Step 8.5] Starting infrastructure...
+2026-03-16 16:41:35,049 [INFO] services.deploy_service: VllmControl initialized for index model
+2026-03-16 16:41:35,049 [INFO] services.deploy_service: VllmControl initialized for qa model
+2026-03-16 16:41:35,049 [INFO] services.deploy_service: DeployServer initialized
+2026-03-16 16:41:35,075 [INFO] services.deploy_service: Waiting for Milvus to be ready...
+2026-03-16 16:41:45,084 [INFO] services.deploy_service: Starting vLLM models...
+2026-03-16 16:41:45,084 [INFO] services.deploy_service: Checking vLLM index service at http://127.0.0.1:65503/v1/models...
+2026-03-16 16:41:51,098 [ERROR] services.deploy_service: vLLM index service not ready after 5 seconds
+2026-03-16 16:41:51,098 [INFO] services.deploy_service: Starting vLLM index with model: /home/NagaiYoru/LLM_model/Qwen3-Embedding-0.6B
+2026-03-16 16:41:51,099 [INFO] services.deploy_service: vLLM command: /home/NagaiYoru/LLM_tuning/UltraRAG/.venv/bin/python -m vllm.entrypoints.openai.api_server --model /home/NagaiYoru/LLM_model/Qwen3-Embedding-0.6B --trust-remote-code --host 127.0.0.1 --port 65503 --max-model-len 4096 --gpu-memory-utilization 0.15 --tensor-parallel-size 1 --served-model-name qwen3-embedding-0.6b --enforce-eager
+2026-03-16 16:41:51,110 [INFO] services.deploy_service: vLLM index started with PID: 422518
+2026-03-16 16:41:51,111 [INFO] services.deploy_service: Checking vLLM qa service at http://127.0.0.1:65504/v1/models...
+2026-03-16 16:41:57,124 [ERROR] services.deploy_service: vLLM qa service not ready after 5 seconds
+2026-03-16 16:41:57,124 [INFO] services.deploy_service: Starting vLLM qa with model: /home/NagaiYoru/LLM_model/Llama-3.2-3B-Instruct
+2026-03-16 16:41:57,124 [INFO] services.deploy_service: vLLM command: /home/NagaiYoru/LLM_tuning/UltraRAG/.venv/bin/python -m vllm.entrypoints.openai.api_server --model /home/NagaiYoru/LLM_model/Llama-3.2-3B-Instruct --trust-remote-code --host 127.0.0.1 --port 65504 --max-model-len 8192 --gpu-memory-utilization 0.85 --tensor-parallel-size 1 --served-model-name llama3-3b-instruct --enforce-eager
+2026-03-16 16:41:57,125 [INFO] services.deploy_service: vLLM qa started with PID: 422619
+2026-03-16 16:41:57,125 [INFO] services.deploy_service: Infrastructure started successfully
+2026-03-16 16:41:57,125 [INFO] __main__: 
+[Step 9] Building index with UltraRAG...
+2026-03-16 16:41:57,125 [INFO] services.index_service: Index service initialized with embedding model: /home/NagaiYoru/LLM_model/Qwen3-Embedding-0.6B
+2026-03-16 16:41:57,125 [INFO] services.index_service: Starting index build for PDFs in: /home/NagaiYoru/research/IRIS_papers/update_2026_03_16_1641/pdfs
+2026-03-16 16:41:57,125 [INFO] services.index_service: Output directory: /home/NagaiYoru/research/IRIS_papers/update_2026_03_16_1641/index_storage
+2026-03-16 16:41:57,125 [INFO] services.index_service:   Chunks: /home/NagaiYoru/research/IRIS_papers/update_2026_03_16_1641/index_storage/chunks.jsonl
+2026-03-16 16:41:57,125 [INFO] services.index_service:   Index: Milvus
+2026-03-16 16:41:57,125 [INFO] services.index_service:   Collection: update_20260316
+2026-03-16 16:41:57,125 [INFO] services.index_service:   Overwrite: False
+2026-03-16 16:41:57,126 [INFO] services.index_service: Copied IRIS pipeline to UltraRAG: /home/NagaiYoru/LLM_tuning/UltraRAG/pipelines/offline_build_index_iris_20260316_164157.yaml
+2026-03-16 16:41:57,126 [INFO] services.index_service: Initializing UltraRAG build: /home/NagaiYoru/LLM_tuning/UltraRAG/pipelines/offline_build_index_iris_20260316_164157.yaml
+2026-03-16 16:41:57,126 [ERROR] services.index_service: Error initializing UltraRAG build: name 'subprocess' is not defined
+2026-03-16 16:41:57,126 [ERROR] services.index_service: UltraRAG build initialization failed
+2026-03-16 16:41:57,126 [ERROR] __main__: Index build failed, skipping QA
+2026-03-16 16:41:57,126 [INFO] __main__: 
+[Step 12] Sending email notification...
+2026-03-16 16:41:57,126 [INFO] __main__: Email notifications disabled in config
+2026-03-16 16:41:57,126 [INFO] __main__: 
+[Step 11.5] Stopping infrastructure...
+2026-03-16 16:41:57,126 [INFO] services.deploy_service: Stopping vLLM models...
+2026-03-16 16:41:57,126 [INFO] services.deploy_service: Stopping vLLM index (PID: 422518)
+2026-03-16 16:41:58,699 [INFO] services.deploy_service: vLLM index stopped gracefully
+2026-03-16 16:41:58,700 [INFO] services.deploy_service: Stopping vLLM qa (PID: 422619)
+2026-03-16 16:41:58,715 [INFO] services.deploy_service: vLLM qa stopped gracefully
+2026-03-16 16:42:01,741 [INFO] services.deploy_service: Stopping Milvus container: milvus-ultrarag
+2026-03-16 16:42:02,140 [INFO] services.deploy_service: Milvus container stopped
+2026-03-16 16:42:02,140 [INFO] services.deploy_service: Infrastructure stopped successfully
+2026-03-16 16:42:02,140 [INFO] __main__: Infrastructure stopped successfully
+2026-03-16 16:42:02,140 [INFO] __main__: 
+============================================================
+2026-03-16 16:42:02,140 [INFO] __main__: IRIS Update Cycle Completed Successfully
+2026-03-16 16:42:02,140 [INFO] __main__: ============================================================
+2026-03-16 16:42:02,140 [INFO] __main__: Update folder: /home/NagaiYoru/research/IRIS_papers/update_2026_03_16_1641
+2026-03-16 16:42:02,140 [INFO] __main__: New papers: 2
