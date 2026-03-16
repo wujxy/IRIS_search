@@ -21,6 +21,7 @@ from services.arxiv_service import ArxivService
 from services.index_service import IndexService
 from services.qa_service import QAService
 from services.email_service import EmailService
+from services.deploy_server import DeployServer
 from utils.helpers import (
     load_config,
     load_questions,
@@ -239,68 +240,83 @@ def run_update_cycle(config: dict):
         update_log = generate_update_log(metadata, update_folder)
         save_update_log(update_folder, update_log)
 
+        # Step 8.5: 启动基础设施（Milvus + vLLM 索引模型 + vLLM QA 模型）
+        logger.info("\n[Step 8.5] Starting infrastructure...")
+        deploy_server = DeployServer(config)
+
+        if not deploy_server.start_infrastructure():
+            logger.error("Failed to start infrastructure")
+            return False
+
         # Step 9: Build index if there are new papers
         papers_with_answers = []
         if new_papers:
             logger.info("\n[Step 9] Building index with UltraRAG...")
+
+            # 生成批次命名的 collection_name
+            collection_name = f"update_{datetime.now().strftime('%Y%m%d')}"
+
             index_service = IndexService(
                 ultrarag_path=config["ultrarag"]["ultrarag_path"],
                 embedding_model=config["models"]["embedding_model_path"],
-                index_backend=config["ultrarag"]["index_backend"]
+                collection_name=collection_name
             )
 
             index_output_dir = update_folder / "index_storage"
+
+            # overwrite=false 用于 Milvus 增量更新
             success = index_service.chunk_and_index(
                 pdf_dir=pdf_dir,
                 output_dir=index_output_dir,
-                use_gpu=True
+                collection_name=collection_name,
+                overwrite=False
             )
 
             if success:
                 index_info = index_service.get_index_info(index_output_dir)
                 logger.info(f"Index created: {index_info['chunk_count']} chunks")
 
-                # Step 10: Generate summaries using QA
-                logger.info("\n[Step 10] Generating summaries using QA...")
+                # Step 10: QA 处理（vLLM 模型已在 Step 8.5 中同时启动）
+                logger.info("\n[Step 10] QA processing...")
+                # vLLM 模型（索引和 QA）已在 Step 8.5 中同时启动
                 qa_service = QAService(
                     ultrarag_path=config["ultrarag"]["ultrarag_path"],
                     embedding_model=config["models"]["embedding_model_path"],
                     reranker_model=config["models"]["reranker_model_path"],
                     generation_model=config["models"]["llm_model_path"],
                     vllm_base_url=config["models"]["vllm"]["base_url"],
+                    index_vllm_base_url=config["models"]["vllm"]["index"]["base_url"],
                     served_model_name=config["models"]["vllm"]["served_model_name"],
                     system_prompt=config["qa"]["system_prompt"],
-                    index_backend=config["ultrarag"]["index_backend"]
+                    collection_name=collection_name
                 )
 
-                # Check vLLM service with auto-start enabled
-                if qa_service.check_vllm_service(auto_start=True):
-                    # Load questions
-                    questions = load_questions(config["qa"]["question_set_path"])
+                # Load questions
+                questions = load_questions(config["qa"]["question_set_path"])
 
-                    # QA for each paper (using first 5 questions for summarization)
-                    chunks_path = Path(index_info["chunks_file"])
-                    index_path = Path(index_info["index_file"]) if index_info["index_file"] else None
+                # QA for each paper (using first 5 questions for summarization)
+                chunks_path = Path(index_info["chunks_file"])
+                index_path = Path(index_info["index_file"]) if index_info["index_file"] else None
 
-                    if chunks_path.exists() and (index_path or config["ultrarag"]["index_backend"] != "faiss"):
-                        for paper in new_papers:
-                            paper_questions = questions[:5]  # Use first 5 questions
-                            answers = qa_service.query_knowledge_base_batch(
-                                questions=paper_questions,
-                                index_path=index_path,
-                                chunks_path=chunks_path
-                            )
+                if chunks_path.exists():
+                    for paper in new_papers:
+                        paper_questions = questions[:5]  # Use first 5 questions
+                        answers = qa_service.query_knowledge_base_batch(
+                            questions=paper_questions,
+                            chunks_path=chunks_path,
+                            collection_name=collection_name
+                        )
 
-                            # Map answers to question keys
-                            answers_dict = {}
-                            for idx, ans in enumerate(answers):
-                                answers_dict[f"q{idx+1}"] = ans.get("answer", "")
+                        # Map answers to question keys
+                        answers_dict = {}
+                        for idx, ans in enumerate(answers):
+                            answers_dict[f"q{idx+1}"] = ans.get("answer", "")
 
-                            papers_with_answers.append({
-                                "paper": paper,
-                                "answers": answers_dict
-                            })
-                            logger.info(f"Generated summary for: {paper['title'][:50]}...")
+                        papers_with_answers.append({
+                            "paper": paper,
+                            "answers": answers_dict
+                        })
+                        logger.info(f"Generated summary for: {paper['title'][:50]}...")
 
                         # Step 11: Generate summary and knowledge logs
                         logger.info("\n[Step 11] Generating summary and knowledge logs...")
@@ -351,6 +367,11 @@ def run_update_cycle(config: dict):
                 logger.warning("Email notification failed")
         else:
             logger.info("Email notifications disabled in config")
+
+        # Step 11.5: 停止基础设施
+        logger.info("\n[Step 11.5] Stopping infrastructure...")
+        deploy_server.stop_infrastructure()
+        logger.info("Infrastructure stopped successfully")
 
         logger.info("\n" + "=" * 60)
         logger.info("IRIS Update Cycle Completed Successfully")

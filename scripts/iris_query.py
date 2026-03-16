@@ -5,7 +5,7 @@ Interactive script to query the IRIS knowledge base.
 
 Usage:
     python scripts/iris_query.py "What machine learning methods are used?"
-    python scripts/iris_query.py --index path/to/index.index --chunks path/to/chunks.jsonl "question"
+    python scripts/iris_query.py --chunks path/to/chunks.jsonl --collection iris_papers "question"
     python scripts/iris_query.py --interactive
 """
 
@@ -19,21 +19,22 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from utils.helpers import load_config, setup_logging, get_latest_update_folder
 from services.qa_service import QAService
+from services.deploy_server import DeployServer
 
 
 logger = logging.getLogger(__name__)
 
 
-def find_index_files(database_root: str, update_folder: str = None):
+def find_chunks_file(database_root: str, update_folder: str = None):
     """
-    Find index files from the IRIS database.
+    Find chunks file from the IRIS database.
 
     Args:
         database_root: Path to the IRIS database root
         update_folder: Specific update folder to use (optional)
 
     Returns:
-        Tuple of (chunks_path, index_path)
+        Path to chunks.jsonl file, or None if not found
     """
     database_root = Path(database_root)
 
@@ -45,37 +46,30 @@ def find_index_files(database_root: str, update_folder: str = None):
     if folder_path is None:
         logger.error("No update folders found in the database")
         logger.info(f"Database root: {database_root}")
-        return None, None
+        return None
 
     logger.info(f"Using update folder: {folder_path}")
 
     # Try to find index_storage in update folder
     index_storage = folder_path / "index_storage"
     chunks_file = index_storage / "chunks.jsonl"
-    index_file = index_storage / "index.index"
 
     if not chunks_file.exists():
         logger.error(f"Chunks file not found: {chunks_file}")
-        return None, None
-
-    if not index_file.exists():
-        logger.error(f"Index file not found: {index_file}")
-        return None, None
+        return None
 
     logger.info(f"Chunks file: {chunks_file}")
-    logger.info(f"Index file: {index_file}")
 
-    return chunks_file, index_file
+    return chunks_file
 
 
-def interactive_mode(qa_service: QAService, chunks_path: Path, index_path: Path):
+def interactive_mode(qa_service: QAService, chunks_path: Path):
     """
     Run interactive query mode.
 
     Args:
         qa_service: QA service instance
         chunks_path: Path to chunks file
-        index_path: Path to index file
     """
     print("\n" + "=" * 60)
     print("IRIS Interactive Query Mode")
@@ -100,7 +94,6 @@ def interactive_mode(qa_service: QAService, chunks_path: Path, index_path: Path)
             # Query the knowledge base
             answer = qa_service.query_knowledge_base(
                 question=question,
-                index_path=index_path,
                 chunks_path=chunks_path
             )
 
@@ -120,8 +113,8 @@ def interactive_mode(qa_service: QAService, chunks_path: Path, index_path: Path)
 def single_query_mode(
     qa_service: QAService,
     chunks_path: Path,
-    index_path: Path,
-    question: str
+    question: str,
+    collection_name: str = "iris_papers"
 ):
     """
     Run a single query and display the result.
@@ -129,8 +122,8 @@ def single_query_mode(
     Args:
         qa_service: QA service instance
         chunks_path: Path to chunks file
-        index_path: Path to index file
         question: Question to ask
+        collection_name: Milvus collection name
     """
     print(f"\nQuestion: {question}")
     print("-" * 60)
@@ -138,7 +131,6 @@ def single_query_mode(
     # Query the knowledge base
     answer = qa_service.query_knowledge_base(
         question=question,
-        index_path=index_path,
         chunks_path=chunks_path
     )
 
@@ -162,7 +154,7 @@ Examples:
   python iris_query.py --update update_2026_03_15_1200 "What are the main findings?"
 
   # Single query with explicit paths
-  python iris_query.py --chunks ./chunks.jsonl --index ./index.index "question"
+  python iris_query.py --chunks ./chunks.jsonl --collection iris_papers "question"
 
   # Interactive mode
   python iris_query.py --interactive
@@ -204,10 +196,15 @@ Examples:
         help="Path to chunks.jsonl file (overrides auto-detection)"
     )
     parser.add_argument(
-        "--index",
+        "--collection",
         type=str,
-        default=None,
-        help="Path to index.index file (overrides auto-detection)"
+        default="iris_papers",
+        help="Milvus collection name"
+    )
+    parser.add_argument(
+        "--start-infra",
+        action="store_true",
+        help="Start infrastructure (Milvus + vLLM) before query"
     )
     parser.add_argument(
         "--interactive",
@@ -268,16 +265,15 @@ Examples:
                     print(f"  {folder.name} (no metadata)")
         return
 
-    # Find index files
-    if args.chunks and args.index:
-        # Use explicit paths
+    # Find chunks file (Milvus: no index file needed)
+    if args.chunks:
         chunks_path = Path(args.chunks)
-        index_path = Path(args.index)
     else:
         # Auto-detect from database
-        chunks_path, index_path = find_index_files(database_root, args.update)
+        chunks_path = find_chunks_file(database_root, args.update)
 
-    if chunks_path is None or index_path is None:
+    if chunks_path is None:
+        logger.error("Could not find chunks file")
         sys.exit(1)
 
     # Initialize QA service
@@ -287,29 +283,47 @@ Examples:
         reranker_model=config["models"]["reranker_model_path"],
         generation_model=config["models"]["llm_model_path"],
         vllm_base_url=config["models"]["vllm"]["base_url"],
+        index_vllm_base_url=config["models"]["vllm"]["index"]["base_url"],
         served_model_name=config["models"]["vllm"]["served_model_name"],
-        system_prompt=config["qa"]["system_prompt"],
-        index_backend=config["ultrarag"]["index_backend"]
+        collection_name=args.collection
     )
 
     # Check vLLM service
-    if not qa_service.check_vllm_service(timeout=60):
-        logger.error("vLLM service is not available")
-        print("\nError: vLLM service is not running.")
-        print("Please start the vLLM service first:")
-        print(f"  cd {config['ultrarag']['ultrarag_path']}")
-        print("  .venv/bin/python -m vllm.entrypoints.openai.api_server \\")
-        print(f"    --model {config['models']['llm_model_path']} \\")
-        print("    --host 127.0.0.1 --port 65504")
-        sys.exit(1)
+    if args.start_infra:
+        # 独立运行时启动基础设施（Milvus + vLLM 索引模型 + vLLM QA 模型）
+        logger.info("Starting infrastructure...")
+        deploy_server = DeployServer(config)
+
+        if not deploy_server.start_infrastructure():
+            logger.error("Failed to start infrastructure")
+            sys.exit(1)
+
+        try:
+            # Run query
+            if args.interactive:
+                interactive_mode(qa_service, chunks_path)
+            elif args.question:
+                single_query_mode(qa_service, chunks_path, args.question)
+            else:
+                print("Error: Please provide a question or use --interactive mode.")
+                sys.exit(1)
+        finally:
+            # Stop infrastructure when done
+            logger.info("Stopping infrastructure...")
+            deploy_server.stop_infrastructure()
+            return
+
+    # If not starting infrastructure, check if services are available
+    if not args.start_infra:
+        logger.info("Not starting infrastructure - assuming services are already running")
 
     # Interactive mode
     if args.interactive:
-        interactive_mode(qa_service, chunks_path, index_path)
+        interactive_mode(qa_service, chunks_path)
 
     # Single query mode
     elif args.question:
-        single_query_mode(qa_service, chunks_path, index_path, args.question)
+        single_query_mode(qa_service, chunks_path, args.question)
 
     else:
         # No question and not interactive - show help

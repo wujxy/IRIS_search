@@ -20,7 +20,6 @@ class IndexService:
         self,
         ultrarag_path: str,
         embedding_model: str,
-        index_backend: str = "faiss",
         collection_name: str = "iris_papers"
     ):
         """
@@ -29,19 +28,17 @@ class IndexService:
         Args:
             ultrarag_path: Path to UltraRAG project root
             embedding_model: Path to embedding model (Qwen0.3B)
-            index_backend: Index backend type (faiss or milvus)
             collection_name: Collection name for Milvus
         """
         self.ultrarag_path = Path(ultrarag_path).absolute()
         self.embedding_model = embedding_model
-        self.index_backend = index_backend
         self.collection_name = collection_name
 
         # Paths to UltraRAG components
         self.pipeline_yaml = self.ultrarag_path / "pipelines" / "offline_build_index_watch.yaml"
         # Template from IRIS project (for independence from UltraRAG)
         script_dir = Path(__file__).parent.parent.absolute()
-        self.parameter_template = script_dir / "config" / "ultrarag" / "templates" / "offline_build_index_watch_parameter.yaml.template"
+        self.parameter_template = script_dir / "configs" / "ultrarag" / "templates" / "offline_build_index_parameter.yaml.template"
 
         logger.info(f"Index service initialized with embedding model: {embedding_model}")
 
@@ -49,7 +46,8 @@ class IndexService:
         self,
         pdf_dir: Path,
         output_dir: Path,
-        use_gpu: bool = True
+        collection_name: str = None,
+        overwrite: bool = False
     ) -> bool:
         """
         Chunk PDFs and build vector index using UltraRAG.
@@ -57,7 +55,8 @@ class IndexService:
         Args:
             pdf_dir: Directory containing PDF files
             output_dir: Directory to save index files
-            use_gpu: Whether to use GPU for FAISS index
+            collection_name: Milvus collection name (defaults to self.collection_name)
+            overwrite: Whether to overwrite existing index (for Milvus incremental update)
 
         Returns:
             True if successful, False otherwise
@@ -86,18 +85,16 @@ class IndexService:
         corpus_output = intermediate_dir / "corpus.jsonl"
         chunks_output = output_dir / "chunks.jsonl"
         embedding_output = intermediate_dir / "embeddings.npy"
-
-        if self.index_backend == "faiss":
-            index_output = output_dir / "index.index"
-        else:  # milvus
-            index_output = output_dir  # Milvus doesn't use file path
+        index_output = output_dir  # Milvus doesn't use file path
 
         logger.info(f"Output directory: {output_dir}")
         logger.info(f"  Chunks: {chunks_output}")
-        logger.info(f"  Index: {index_output if self.index_backend == 'faiss' else 'Milvus'}")
+        logger.info(f"  Index: Milvus")
+        logger.info(f"  Collection: {collection_name or self.collection_name}")
+        logger.info(f"  Overwrite: {overwrite}")
 
         # Create runtime parameter file
-        runtime_param = self.ultrarag_path / "parameter" / "_runtime" / "offline_build_index_watch_parameter.yaml"
+        runtime_param = self.ultrarag_path / "parameter" / "_runtime" / "offline_build_index_parameter.yaml"
 
         replacements = {
             "RAW_PDF_DIR": str(pdf_dir.absolute()),
@@ -106,15 +103,18 @@ class IndexService:
             "EMBEDDING_OUTPUT_PATH": str(embedding_output.absolute()),
             "INDEX_OUTPUT_PATH": str(index_output.absolute()),
             "EMBEDDING_MODEL_PATH": self.embedding_model,
-            "INDEX_USE_GPU": str(use_gpu).lower(),
-            "COLLECTION_NAME": self.collection_name,
+            "COLLECTION_NAME": collection_name or self.collection_name,
             "MILVUS_URI": "tcp://127.0.0.1:29901",
+            "MILVUS_TOKEN": "null",
+            "INDEX_BASE_URL": "http://127.0.0.1:65503/v1",
+            "INDEX_MODEL_NAME": "qwen3-embedding-0.6b",
+            "OVERWRITE": str(overwrite).lower(),
         }
 
         self._create_runtime_parameter(self.parameter_template, runtime_param, replacements)
 
         # Also copy to the location where UltraRAG expects it
-        target_param = self.ultrarag_path / "pipelines" / "parameter" / "offline_build_index_watch_parameter.yaml"
+        target_param = self.ultrarag_path / "pipelines" / "parameter" / "offline_build_index_parameter.yaml"
         target_param.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(runtime_param, target_param)
         logger.info(f"Copied parameter file to: {target_param}")

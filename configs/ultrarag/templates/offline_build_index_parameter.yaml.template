@@ -1,7 +1,3 @@
-# offline_build_index_watch_parameter.yaml.template
-# Template for index watch service parameters
-# The script will replace placeholders with actual values at runtime
-
 corpus:
   parse_file_path: __RAW_PDF_DIR__
   text_corpus_save_path: __CORPUS_OUTPUT_PATH__
@@ -20,7 +16,6 @@ corpus:
   chunk_size: 512
   chunk_path: __CHUNKS_OUTPUT_PATH__
   use_title: false
-
 retriever:
   model_name_or_path: __EMBEDDING_MODEL_PATH__
   backend_configs:
@@ -39,29 +34,29 @@ retriever:
         psg_task: null
         q_task: null
     openai:
-      model_name: qwen3-embedding-0.6b
-      base_url: http://0.0.0.0:65503/v1
+      model_name: __INDEX_MODEL_NAME__
+      base_url: __INDEX_BASE_URL__
       api_key: abc
     bm25:
       lang: ch
-      save_path: test_index/bm25
+      save_path: test_index/bm25_index
   batch_size: 16
   corpus_path: __CHUNKS_OUTPUT_PATH__
   gpu_ids: "0"
   is_multimodal: false
-  backend: sentence_transformers
-  index_backend: faiss
+  backend: openai
+  index_backend: milvus
   index_backend_configs:
     faiss:
-      index_use_gpu: __INDEX_USE_GPU__
+      index_use_gpu: true
       index_chunk_size: 10000
-      index_path: __INDEX_OUTPUT_PATH__
+      index_path: index/index.index
     milvus:
       uri: __MILVUS_URI__
-      token: null
+      token: __MILVUS_TOKEN__
       id_field_name: id
       vector_field_name: vector
-      text_field_name: contents
+      # text_field_name: contents
       id_max_length: 64
       text_max_length: 60000
       metric_type: IP
@@ -72,7 +67,7 @@ retriever:
         metric_type: IP
         params: {}
       index_chunk_size: 1000
-  is_demo: false
+  is_demo: true
   collection_name: __COLLECTION_NAME__
   embedding_path: __EMBEDDING_OUTPUT_PATH__
-  overwrite: true
+  overwrite: __OVERWRITE__
