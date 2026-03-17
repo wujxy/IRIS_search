@@ -196,7 +196,7 @@ class ArxivService:
         paper: Dict[str, Any],
         save_dir: Path,
         filename: Optional[str] = None
-    ) -> Optional[Path]:
+    ) -> tuple[Optional[Path], bool]:
         """
         Download PDF for a paper.
 
@@ -206,7 +206,7 @@ class ArxivService:
             filename: Optional filename (auto-generated if not provided)
 
         Returns:
-            Path to downloaded PDF, or None if download failed
+            Tuple of (file_path, success) where success is True if download succeeded
         """
         if filename is None:
             # Generate filename from entry_id
@@ -225,11 +225,11 @@ class ArxivService:
                     f.write(chunk)
 
             logger.info(f"Downloaded PDF: {paper['title'][:50]}... -> {filename}")
-            return save_path
+            return save_path, True
 
         except Exception as e:
             logger.error(f"Failed to download PDF for {paper['title'][:50]}...: {e}")
-            return None
+            return None, False
 
     def download_pdfs(
         self,
@@ -253,9 +253,9 @@ class ArxivService:
                 # Skip duplicates and review papers
                 continue
 
-            pdf_path = self.download_pdf(paper, save_dir)
+            pdf_path, success = self.download_pdf(paper, save_dir)
             paper["pdf_path"] = str(pdf_path) if pdf_path else None
-            paper["download_success"] = pdf_path is not None
+            paper["download_success"] = success
 
         successful = sum(1 for p in papers if p.get("download_success", False))
         logger.info(f"Successfully downloaded {successful}/{len(papers)} PDFs")

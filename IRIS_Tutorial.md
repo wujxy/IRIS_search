@@ -46,7 +46,8 @@ IRIS (Intelligent Research Information System) 是一个自动化的人工智能
 - **UltraRAG** - RAG 框架，用于文档处理和向量检索
 - **Qwen3-Embedding-0.6B** - 嵌入模型（生成向量表示）
 - **Llama-3.2-3B-Instruct** - 生成模型（用于摘要和问答）
-- **FAISS** - 向量索引库
+- **Milvus** - 向量数据库（替代 FAISS，支持增量索引）
+- **Docker** - Milvus 容器部署
 - **vLLM** - LLM 推理服务
 
 ---
@@ -68,31 +69,43 @@ IRIS (Intelligent Research Information System) 是一个自动化的人工智能
 │       ▼               ▼                  ▼          │    │
 │  ┌──────────┐   ┌──────────┐   ┌──────────┐    │
 │  │论文      │   │  向量    │   │  摘要    │    │
-│  │数据库    │   │  索引库  │   │  与知识  │    │
-│  └──────────┘   └──────────┘   │  日志     │    │
-│       │                             └──────────┘    │
-│       ▼                                     ▼       │
-│  ┌──────────┐                           ┌──────────┐    │
-│  │邮件      │                           │  用户查询 │    │
-│  │通知服务  │                           │  接口    │    │
-│  └──────────┘                           └──────────┘    │
+│  │数据库    │   │  数据库  │   │  与知识  │    │
+│  │(Milvus) │   │(Milvus)  │   │  日志     │    │
+│  └──────────┘   └──────────┘   └──────────┘    │
+│       │                             ▼       │
+│       ▼                       ┌──────────┐    │
+│  ┌──────────┐               │  用户查询 │    │
+│  │邮件      │               │  接口    │    │
+│  │通知服务  │               └──────────┘    │
+│  └──────────┘                                  │
 │                                                      │
 └──────────────────────────────────────────────────────────────────┘
 
 外部服务:
 ┌──────────┐   ┌──────────┐   ┌──────────┐
 │  vLLM    │   │ UltraRAG  │   │  arXiv    │
-│  服务     │   │ 框架     │   │  API       │
-└──────────┘   └──────────┘   └──────────┘
+│  索引服务  │   │ 框架     │   │  API       │
+│  (port 65503)│└──────────┘   └──────────┘
+│──────────┤
+│  vLLM    │
+│  QA服务   │
+│  (port 65504)│
+│──────────┘
+┌──────────┐
+│  Milvus  │
+│  Docker   │
+└──────────┘
 ```
 
 ### 2.2 数据流
 
 1. **搜索阶段**: arXiv 服务搜索论文 → 获取元数据
-2. **过滤阶段**: 过滤评论文章 → 检测重复 → 下载 PDF
-3. **索引阶段**: UltraRAG 切片 PDF → Qwen0.3B 嵌入 → 生成向量索引
-4. **摘要阶段**: Llama3B 模型 → 生成摘要 → 提取知识点
-5. **通知阶段**: 邮件服务 → 发送更新通知
+2. **过滤阶段**: 过滤评论文章 → 检测重复 → 下载 PDF（失败重试机制）
+3. **基础设施启动**: 启动 Milvus → 启动索引模型 vLLM → 启动 QA 模型 vLLM
+4. **索引阶段**: UltraRAG 切片 PDF → Qwen3-Embedding-0.6B 嵌入 → 写入 Milvus（增量更新）
+5. **摘要阶段**: Llama3B 模型 → 生成摘要 → 提取知识点
+6. **通知阶段**: 邮件服务 → 发送更新通知
+7. **基础设施停止**: 停止 vLLM 模型 → 停止 Milvus
 
 ### 2.3 项目结构
 
@@ -109,7 +122,8 @@ IRIS_search/
 │   ├── arxiv_service.py        # arXiv 搜索服务
 │   ├── index_service.py        # 索引服务
 │   ├── qa_service.py           # 问答服务
-│   └── email_service.py        # 邮件服务
+│   ├── email_service.py        # 邮件服务
+│   └── deploy_service.py       # 基础设施部署服务
 ├── scripts/                    # 脚本层
 │   ├── run_update_cycle.py     # 主编排脚本
 │   └── iris_query.py          # 查询接口
@@ -128,10 +142,22 @@ IRIS_search/
 - **内存**: 至少 16GB RAM
 - **GPU**: NVIDIA GPU (推荐 12GB+ VRAM)
 - **存储**: 至少 50GB 可用空间
+- **Docker**: Docker Engine 20.10+（用于 Milvus）
 
 ### 3.2 必需软件
 
-1. **UltraRAG 框架**
+1. **Docker**（Milvus 依赖）
+   ```bash
+   # 安装 Docker
+   curl -fsSL https://get.docker.com -o get-docker.sh
+   sudo sh get-docker.sh
+
+   # 验证安装
+   docker --version
+   docker ps
+   ```
+
+2. **UltraRAG 框架**
    ```bash
    cd ~/LLM_tuning/UltraRAG
    # 确保 UltraRAG 已正确安装
@@ -139,14 +165,14 @@ IRIS_search/
    which ultrarag
    ```
 
-2. **Python 虚拟环境**
+3. **Python 虚拟环境**
    ```bash
    # 使用已有的 llm_env
    source /home/NagaiYoru/LLM_tuning/llm_env/bin/activate
    python --version  # 确认 Python 3.10+
    ```
 
-3. **模型文件**
+4. **模型文件**
    - 嵌入模型: `/home/NagaiYoru/LLM_model/Qwen3-Embedding-0.6B`
    - 生成模型: `/home/NagaiYoru/LLM_model/Llama-3.2-3B-Instruct`
    - 重排序模型: `/home/NagaiYoru/LLM_model/MiniCPM-Reranker-Light`
@@ -205,11 +231,30 @@ storage:
 ```yaml
 ultrarag:
   ultrarag_path: /home/NagaiYoru/LLM_tuning/UltraRAG
-  index_backend: faiss      # 索引后端: faiss 或 milvus
+  index_backend: milvus      # 索引后端: milvus（支持增量索引）
   index_storage: /home/NagaiYoru/research/IRIS_papers/index_storage
 ```
 
-#### 4.1.5 模型配置 (models)
+#### 4.1.5 Milvus 配置 (milvus)
+
+```yaml
+milvus:
+  enabled: true
+  container_name: milvus-ultrarag
+  data_dir: /home/NagaiYoru/LLM_tuning/UltraRAG/milvus_test
+  grpc_port: 29901
+  http_port: 29902
+  image: milvusdb/milvus:latest
+  uri: http://localhost:29901
+  token: null
+```
+
+**说明**：
+- Milvus 以 Docker 容器方式运行
+- `data_dir` 用于持久化向量数据
+- `grpc_port` 和 `http_port` 分别用于 gRPC 和 HTTP 访问
+
+#### 4.1.6 模型配置 (models)
 
 ```yaml
 models:
@@ -217,11 +262,35 @@ models:
   reranker_model_path: /home/NagaiYoru/LLM_model/MiniCPM-Reranker-Light
   llm_model_path: /home/NagaiYoru/LLM_model/Llama-3.2-3B-Instruct
   vllm:
+    # QA 模型配置（用于问答和摘要生成）
     base_url: http://127.0.0.1:65504/v1
+    host: 127.0.0.1
+    port: 65504
     served_model_name: llama3-3b-instruct
+    max_model_len: 8192
+    gpu_memory_utilization: 0.85
+    tensor_parallel_size: 1
+    enforce_eager: true
+
+    # 索引模型配置（用于文档嵌入）
+    index:
+      model_name: qwen3-embedding-0.6b
+      host: 127.0.0.1
+      port: 65503
+      base_url: http://127.0.0.1:65503/v1
+      max_model_len: 4096
+      gpu_memory_utilization: 0.15
+      tensor_parallel_size: 1
+      served_model_name: qwen3-embedding-0.6b
 ```
 
-#### 4.1.6 QA 配置 (qa)
+**说明**：
+- IRIS 使用两个独立的 vLLM 服务：
+  - 索引模型（端口 65503）：专门用于文档嵌入，占用较少 GPU 资源
+  - QA 模型（端口 65504）：用于问答和摘要生成，占用较多 GPU 资源
+- 两个模型可以同时运行，通过 `gpu_memory_utilization` 参数分配 GPU 资源
+
+#### 4.1.7 QA 配置 (qa)
 
 ```yaml
 qa:
@@ -232,7 +301,7 @@ qa:
   system_prompt: "你是一个专业的UltraRAG问答助手。请一定记住使用中文回答问题,且足够专业"
 ```
 
-#### 4.1.7 邮件配置 (email)
+#### 4.1.8 邮件配置 (email)
 
 ```yaml
 email:
@@ -273,45 +342,24 @@ What are the possible research directions for future work based on this paper?
 mkdir -p /home/NagaiYoru/research/IRIS_papers
 ```
 
-#### 步骤 2: 启动 vLLM 服务
+#### 步骤 2: 配置 IRIS（基础设施将自动启动）
 
-**重要**: QA 功能需要 vLLM 服务运行。
+**重要**：更新周期会自动启动和管理所有基础设施：
+- Milvus 向量数据库（Docker 容器）
+- vLLM 索引模型服务（端口 65503）
+- vLLM QA 模型服务（端口 65504）
 
-```bash
-cd /home/NagaiYoru/LLM_tuning/UltraRAG
-source .venv/bin/activate
+无需手动启动这些服务，`DeployService` 会自动处理。
 
-# 启动 Llama3B 模型服务
-python -m vllm.entrypoints.openai.api_server \
-    --model /home/NagaiYoru/LLM_model/Llama-3.2-3B-Instruct \
-    --trust-remote-code \
-    --host 127.0.0.1 \
-    --port 65504 \
-    --max-model-len 8192 \
-    --gpu-memory-utilization 0.7 \
-    --tensor-parallel-size 1 \
-    --enforce-eager
-```
-
-**验证服务启动**:
+**验证服务状态**（可选）：
 
 ```bash
-curl http://127.0.0.1:65504/v1/models
-```
+# 检查 Milvus 容器
+docker ps | grep milvus
 
-应该返回类似以下内容：
-```json
-{
-  "object": "list",
-  "data": [
-    {
-      "id": "llama3-3b-instruct",
-      "object": "model",
-      "created": 1710000000,
-      ...
-    }
-  ]
-}
+# 检查 vLLM 服务
+curl http://127.0.0.1:65503/v1/models  # 索引模型
+curl http://127.0.0.1:65504/v1/models  # QA 模型
 ```
 
 #### 步骤 3: 配置 IRIS
@@ -525,6 +573,8 @@ python scripts/iris_query.py --chunks /path/to/chunks.jsonl --index /path/to/ind
    - 使用 `requests` 库下载 PDF
    - 支持批量下载
    - 错误处理和重试
+   - **失败处理**：跳过 PDF 下载失败的文章，继续处理其他文章
+   - **重试逻辑**：系统会搜索更多论文以填补失败的下载
 
 #### 关键代码
 
@@ -560,7 +610,7 @@ search = arxiv.Search(
    - 替换占位符（如 `__RAW_PDF_DIR__`）
    - 支持模型路径、输出路径等配置
 
-#### UltraRAG 工作流
+#### UltraRAG 工作流（Milvus）
 
 ```
 PDF 文件夹
@@ -573,10 +623,15 @@ UltraRAG offline_build_index_watch.yaml
     ↓
 [retriever.model_name_or_path] → Qwen3-Embedding-0.6B
     ↓
-[retriever.index_backend_configs.faiss] → FAISS 索引构建
+[retriever.index_backend_configs.milvus] → Milvus 向量数据库
     ↓
-chunks.jsonl + index.index
+chunks.jsonl + Milvus Collection
 ```
+
+**Milvus 优势**：
+- 支持增量索引，无需重建整个索引
+- 适合大规模向量检索
+- 提供 REST/gRPC 接口，支持分布式部署
 
 #### 关键代码
 
@@ -697,22 +752,31 @@ message.attach(html_part)
   ↓
 [Step 5] 过滤论文（重复、评论）
   ↓
-[Step 6] 下载 PDF
+[Step 6] 下载 PDF（含重试机制，跳过失败）
   ↓
 [Step 7] 保存元数据
   ↓
 [Step 8] 生成更新日志
   ↓
+[Step 8.5] 启动基础设施（Milvus + vLLM 索引模型 + vLLM QA 模型）
+  ↓
 [Step 9] 构建 UltraRAG 索引（如果有新论文）
   ↓
-[Step 10] 生成摘要（如果索引成功）
+[Step 10] QA 处理（如果索引成功）
   ↓
 [Step 11] 生成摘要和知识日志
   ↓
 [Step 12] 发送邮件通知
   ↓
+[Step 11.5] 停止基础设施
+  ↓
 完成
 ```
+
+**PDF 下载失败处理**：
+- 系统使用重试循环确保下载足够数量的论文
+- 失败的 PDF 不会中断流程，会被记录并跳过
+- 只有成功下载的论文才会进入索引和 QA 处理
 
 #### 摘要生成格式
 
@@ -745,41 +809,125 @@ message.attach(html_part)
 研究方向的答案...
 ```
 
+### 7.6 部署服务 (`services/deploy_service.py`)
+
+#### 核心功能
+
+`DeployService` 统一管理 IRIS 所需的基础设施：
+- **MilvusControl**: 管理 Milvus Docker 容器
+- **VllmControl**: 管理 vLLM 模型服务（索引和 QA）
+
+#### Milvus 管理
+
+```python
+class MilvusControl:
+    - search(): 检查容器是否运行
+    - start(): 启动 Milvus 容器（支持已存在容器）
+    - stop(): 停止容器
+```
+
+**Milvus 配置**：
+- 使用 Docker standalone 模式
+- 数据持久化到 `data_dir`
+- 健康检查确保服务可用性
+- 自动重启策略
+
+#### vLLM 管理
+
+```python
+class VllmControl:
+    - search(): 检查服务健康状态
+    - start(): 以子进程方式启动模型
+    - stop(): 优雅停止模型进程
+```
+
+**两个 vLLM 服务**：
+1. **索引模型** (Qwen3-Embedding-0.6B, 端口 65503)
+   - 用于文档嵌入生成
+   - GPU 内存占用约 15%
+
+2. **QA 模型** (Llama-3.2-3B-Instruct, 端口 65504)
+   - 用于问答和摘要生成
+   - GPU 内存占用约 85%
+
+#### 统一管理
+
+```python
+class DeployService:
+    - start_infrastructure(): 启动 Milvus + 两个 vLLM
+    - stop_infrastructure(): 停止所有服务
+```
+
+**启动顺序**：
+1. 检查/启动 Milvus
+2. 等待 Milvus 就绪
+3. 启动索引模型 vLLM
+4. 启动 QA 模型 vLLM
+
+**停止顺序**：
+1. 停止两个 vLLM
+2. 等待 vLLM 停止
+3. 停止 Milvus
+
 ---
 
 ## 8. 故障排除
 
 ### 8.1 常见问题
 
-#### 问题 1: vLLM 服务不可用
+#### 问题 1: Milvus 容器无法启动
 
 **症状**：
 ```
-[ERROR] vLLM service is not available
+[ERROR] Failed to start Milvus
 ```
 
 **解决方案**：
 
-1. 确认 vLLM 服务正在运行：
+1. 检查 Docker 是否运行：
    ```bash
-   ps aux | grep vllm
-   curl http://127.0.0.1:65504/v1/models
+   docker ps
+   docker --version
    ```
 
-2. 重新启动 vLLM 服务：
+2. 检查端口是否被占用：
    ```bash
-   cd /home/NagaiYoru/LLM_tuning/UltraRAG
-   source .venv/bin/activate
-   python -m vllm.entrypoints.openai.api_server \
-       --model /home/NagaiYoru/LLM_model/Llama-3.2-3B-Instruct \
-       --host 127.0.0.1 \
-       --port 65504 \
-       --max-model-len 8192
+   netstat -tuln | grep 2990
    ```
 
-3. 检查配置文件中的 vLLM 地址是否正确
+3. 查看 Milvus 日志：
+   ```bash
+   docker logs milvus-ultrarag
+   ```
 
-#### 问题 2: UltraRAG 命令找不到
+#### 问题 2: vLLM 服务健康检查失败
+
+**症状**：
+```
+[ERROR] vLLM index service not ready after 30 seconds
+[ERROR] vLLM qa service not ready after 30 seconds
+```
+
+**解决方案**：
+
+1. 检查 vLLM 日志：
+   ```bash
+   tail -f logs/vllm_index_output.log
+   tail -f logs/vllm_qa_output.log
+   ```
+
+2. 验证服务状态：
+   ```bash
+   curl http://127.0.0.1:65503/v1/models  # 索引模型
+   curl http://127.0.0.1:65504/v1/models  # QA 模型
+   ```
+
+3. 检查 GPU 可用性：
+   ```bash
+   nvidia-smi
+   ```
+
+#### 问题 3: UltraRAG 命令找不到
 
 **症状**：
 ```
@@ -803,7 +951,7 @@ ultrarag: command not found
 
 3. 检查配置文件中的 UltraRAG 路径
 
-#### 问题 3: 模型文件不存在
+#### 问题 4: 模型文件不存在
 
 **症状**：
 ```
@@ -824,7 +972,7 @@ ultrarag: command not found
 
 3. 下载缺失的模型（如果需要）
 
-#### 问题 4: PDF 下载失败
+#### 问题 5: PDF 下载失败
 
 **症状**：
 ```
@@ -849,7 +997,7 @@ ultrarag: command not found
    tail -f logs/iris_*.log
    ```
 
-#### 问题 5: 索引构建失败
+#### 问题 6: 索引构建失败
 
 **症状**：
 ```
@@ -950,17 +1098,21 @@ ls -td update_* | tail -n +6 | xargs rm -rf
 
 | 参数 | 默认值 | 说明 |
 |------|---------|------|
-| `update.interval_hours` | 2 | 更新间隔（小时） |
-| `arxiv.max_results_per_keyword` | 20 | 每关键词最大结果 |
+| `update.interval_hours` | 1 | 更新间隔（小时） |
+| `arxiv.max_results_per_keyword` | 4 | 每关键词最大结果 |
 | `storage.database_root` | `~/research/IRIS_papers` | 数据库路径 |
+| `ultrarag.index_backend` | `milvus` | 索引后端（milvus） |
+| `milvus.container_name` | `milvus-ultrarag` | Milvus 容器名 |
 | `models.embedding_model_path` | Qwen3-Embedding-0.6B | 嵌入模型 |
 | `models.llm_model_path` | Llama-3.2-3B-Instruct | 生成模型 |
-| `vllm.base_url` | `http://127.0.0.1:65504/v1` | vLLM 服务地址 |
+| `models.vllm.port` | 65504 | QA 模型端口 |
+| `models.vllm.index.port` | 65503 | 索引模型端口 |
 
 ### A.3 相关链接
 
 - [arXiv](https://arxiv.org/)
 - [UltraRAG 文档](https://github.com/OpenBMB/UltraRAG)
+- [Milvus 文档](https://milvus.io/docs)
 - [vLLM 文档](https://docs.vllm.ai/)
 - [Qwen 模型](https://huggingface.co/Qwen)
 - [Llama 模型](https://huggingface.co/meta-llama)

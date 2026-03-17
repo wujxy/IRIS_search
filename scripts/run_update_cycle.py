@@ -124,13 +124,14 @@ def generate_knowledge_markdown(papers_with_answers: list) -> str:
     return markdown
 
 
-def generate_update_log(metadata: dict, update_folder: Path) -> str:
+def generate_update_log(metadata: dict, update_folder: Path, failed_downloads: list = None) -> str:
     """
     Generate update log markdown.
 
     Args:
         metadata: Metadata dictionary
         update_folder: Path to update folder
+        failed_downloads: List of papers that failed to download (optional)
 
     Returns:
         Markdown formatted log string
@@ -144,7 +145,11 @@ def generate_update_log(metadata: dict, update_folder: Path) -> str:
     markdown += f"- Total papers found: {metadata['total_papers']}\n"
     markdown += f"- New papers: {len(metadata['new_papers'])}\n"
     markdown += f"- Duplicate papers: {len(metadata['duplicate_papers'])}\n"
-    markdown += f"- Review papers (excluded): {len(metadata['review_papers'])}\n\n"
+    markdown += f"- Review papers (excluded): {len(metadata['review_papers'])}\n"
+    if failed_downloads is not None:
+        markdown += f"- Download failed (skipped): {len(failed_downloads)}\n\n"
+    else:
+        markdown += "\n"
 
     if metadata['new_papers']:
         markdown += "## New Papers\n\n"
@@ -152,6 +157,14 @@ def generate_update_log(metadata: dict, update_folder: Path) -> str:
             markdown += f"- **{paper['title']}**\n"
             markdown += f"  - Authors: {', '.join(paper['authors'][:3])}\n"
             markdown += f"  - arXiv: {paper['entry_id']}\n\n"
+
+    if failed_downloads:
+        markdown += "## Download Failed Papers\n\n"
+        for paper in failed_downloads:
+            markdown += f"- **{paper['title']}**\n"
+            markdown += f"  - Authors: {', '.join(paper['authors'][:3])}\n"
+            markdown += f"  - arXiv: {paper['entry_id']}\n"
+            markdown += f"  - Reason: PDF download failed\n\n"
 
     return markdown
 
@@ -200,28 +213,58 @@ def run_update_cycle(config: dict):
         logger.info("\n[Step 5] Filtering papers...")
         filtered = arxiv_service.filter_papers(papers, existing_ids)
 
-        # Step 6: Download PDFs
+        # Step 6: Download PDFs (with retry loop)
         logger.info("\n[Step 6] Downloading PDFs...")
-        new_papers = filtered["new"]
-        if new_papers:
-            pdf_dir = update_folder / "pdfs"
-            papers_with_pdf = arxiv_service.download_pdfs(new_papers, pdf_dir)
+        pdf_dir = update_folder / "pdfs"
 
-            # Filter out papers where download failed
-            new_papers = [
-                p for p in papers_with_pdf
-                if p.get("download_success", False)
-            ]
-        else:
-            logger.info("No new papers to download")
-            papers_with_pdf = []
+        downloaded_papers = []
+        failed_downloads = []
+        checked_ids = set()  # 记录已检查的论文 ID，避免重复
 
-        # Combine all papers with status
-        all_papers = filtered["new"] + filtered["duplicate"] + filtered["review"]
-        all_papers = [
-            p for p in all_papers
-            if "download_success" not in p or p.get("download_success", True)
-        ]
+        while len(downloaded_papers) < arxiv_service.max_results:
+            # 搜索一批论文
+            papers = arxiv_service.search_papers()
+
+            new_in_batch = False
+            for paper in papers:
+                # 跳过已检查的论文（已下载、已失败或已跳过）
+                if paper["entry_id"] in checked_ids:
+                    continue
+
+                # 标记为已检查
+                checked_ids.add(paper["entry_id"])
+
+                # 过滤论文（重复、综述）
+                filtered = arxiv_service.filter_papers([paper], existing_ids)
+
+                if filtered["new"]:
+                    paper = filtered["new"][0]
+                    logger.info(f"Downloading PDF for: {paper['title'][:60]}...")
+
+                    # 下载 PDF
+                    pdf_path, success = arxiv_service.download_pdf(paper, pdf_dir)
+                    paper["pdf_path"] = str(pdf_path) if pdf_path else None
+                    paper["download_success"] = success
+
+                    if success:
+                        downloaded_papers.append(paper)
+                        new_in_batch = True
+                        logger.info(f"Successfully downloaded: {paper['title'][:40]}...")
+                    else:
+                        failed_downloads.append(paper)
+                        paper["status"] = "download_failed"
+                        logger.warning(f"Failed to download PDF: {paper['title'][:40]}...")
+
+            # 如果没有新论文或已达到最大文章数，停止
+            if not new_in_batch:
+                logger.info("No new papers in this batch, stopping search...")
+                break
+
+        # 使用成功下载的论文进行后续处理
+        new_papers = downloaded_papers
+
+        # 添加下载失败的论文到 all_papers
+        all_papers = new_papers + filtered["duplicate"] + filtered["review"] + failed_downloads
 
         # Step 7: Save metadata
         logger.info("\n[Step 7] Saving metadata...")
@@ -235,9 +278,10 @@ def run_update_cycle(config: dict):
             "new_papers": new_papers,
             "duplicate_papers": filtered["duplicate"],
             "review_papers": filtered["review"],
+            "failed_downloads": failed_downloads,
             "all_papers": all_papers
         }
-        update_log = generate_update_log(metadata, update_folder)
+        update_log = generate_update_log(metadata, update_folder, failed_downloads)
         save_update_log(update_folder, update_log)
 
         # Step 8.5: 启动基础设施（Milvus + vLLM 索引模型 + vLLM QA 模型）
