@@ -1,0 +1,68 @@
+2026-03-17 13:53:26,839 [INFO] utils.helpers: Logging initialized. Log file: logs/iris_20260317_135326.log
+2026-03-17 13:53:26,839 [INFO] __main__: ============================================================
+2026-03-17 13:53:26,839 [INFO] __main__: Starting IRIS Update Cycle
+2026-03-17 13:53:26,839 [INFO] __main__: ============================================================
+2026-03-17 13:53:26,839 [INFO] __main__: 
+[Step 1] Creating update folder...
+2026-03-17 13:53:26,839 [INFO] __main__: Update folder: /home/NagaiYoru/research/IRIS_papers/update_2026_03_17_1353
+2026-03-17 13:53:26,839 [INFO] __main__: 
+[Step 2] Loading existing paper entries...
+2026-03-17 13:53:26,839 [INFO] __main__: Found 0 existing papers in database
+2026-03-17 13:53:26,839 [INFO] __main__: 
+[Step 3] Initializing arXiv service...
+2026-03-17 13:53:26,839 [INFO] __main__: 
+[Step 4] Searching arXiv for papers...
+2026-03-17 13:53:26,839 [INFO] services.arxiv_service: Searching arXiv with keywords: ['neutrino', 'juno', 'dune', 'hyper-kamiokande', 'super-kamiokande', 'sno', 'kamland', 'borexino']
+2026-03-17 13:53:26,839 [INFO] arxiv: Requesting page (first: True, try: 0): https://export.arxiv.org/api/query?search_query=neutrino+OR+juno+OR+dune+OR+hyper-kamiokande+OR+super-kamiokande+OR+sno+OR+kamland+OR+borexino&id_list=&sortBy=submittedDate&sortOrder=descending&start=0&max_results=100
+2026-03-17 13:53:29,584 [INFO] arxiv: Got first page: 100 of 41540 total results
+2026-03-17 13:53:29,585 [INFO] services.arxiv_service: Found 1 papers from arXiv
+2026-03-17 13:53:29,585 [INFO] __main__: 
+[Step 5] Filtering papers...
+2026-03-17 13:53:29,585 [INFO] services.arxiv_service: Filtering results: 1 new, 0 duplicates, 0 review papers
+2026-03-17 13:53:29,585 [INFO] __main__: 
+[Step 6] Downloading PDFs...
+2026-03-17 13:53:29,585 [INFO] services.arxiv_service: Searching arXiv with keywords: ['neutrino', 'juno', 'dune', 'hyper-kamiokande', 'super-kamiokande', 'sno', 'kamland', 'borexino']
+2026-03-17 13:53:29,585 [INFO] arxiv: Requesting page (first: True, try: 0): https://export.arxiv.org/api/query?search_query=neutrino+OR+juno+OR+dune+OR+hyper-kamiokande+OR+super-kamiokande+OR+sno+OR+kamland+OR+borexino&id_list=&sortBy=submittedDate&sortOrder=descending&start=0&max_results=100
+2026-03-17 13:53:30,697 [INFO] arxiv: Got first page: 100 of 41540 total results
+2026-03-17 13:53:30,698 [INFO] services.arxiv_service: Found 1 papers from arXiv
+2026-03-17 13:53:30,698 [INFO] services.arxiv_service: Filtering results: 1 new, 0 duplicates, 0 review papers
+2026-03-17 13:53:30,698 [INFO] __main__: Downloading PDF for: Probing the potential high-energy messengers of the anticipa...
+2026-03-17 13:53:31,096 [ERROR] services.arxiv_service: Failed to download PDF for Probing the potential high-energy messengers of th...: 404 Client Error: Not Found for url: https://arxiv.org/pdf/2603.15570v1
+2026-03-17 13:53:31,096 [WARNING] __main__: Failed to download PDF: Probing the potential high-energy messen...
+2026-03-17 13:53:31,097 [INFO] __main__: No new papers in this batch, stopping search...
+2026-03-17 13:53:31,097 [INFO] __main__: 
+[Step 7] Saving metadata...
+2026-03-17 13:53:31,097 [INFO] __main__: 
+[Step 8] Generating update log...
+2026-03-17 13:53:31,097 [INFO] __main__: 
+[Step 8.5] Starting infrastructure...
+2026-03-17 13:53:31,097 [INFO] services.deploy_service: VllmControl initialized for index model
+2026-03-17 13:53:31,097 [INFO] services.deploy_service: VllmControl initialized for qa model
+2026-03-17 13:53:31,097 [INFO] services.deploy_service: DeployServer initialized
+2026-03-17 13:53:31,174 [INFO] services.deploy_service: Starting Milvus container: milvus-ultrarag
+2026-03-17 13:53:31,188 [INFO] services.deploy_service: Container exists, starting existing container
+2026-03-17 13:53:31,430 [INFO] services.deploy_service: Milvus container started
+2026-03-17 13:53:31,430 [INFO] services.deploy_service: Waiting for Milvus to be ready...
+2026-03-17 13:53:41,440 [INFO] services.deploy_service: Starting vLLM models...
+2026-03-17 13:53:41,441 [INFO] services.deploy_service: Checking vLLM index service at http://127.0.0.1:65503/v1/models...
+2026-03-17 13:53:47,453 [ERROR] services.deploy_service: vLLM index service not ready after 5 seconds
+2026-03-17 13:53:47,453 [INFO] services.deploy_service: Starting vLLM index with model: /home/NagaiYoru/LLM_model/Qwen3-Embedding-0.6B
+2026-03-17 13:53:47,453 [INFO] services.deploy_service: vLLM command: /home/NagaiYoru/LLM_tuning/UltraRAG/.venv/bin/python -m vllm.entrypoints.openai.api_server --model /home/NagaiYoru/LLM_model/Qwen3-Embedding-0.6B --trust-remote-code --host 127.0.0.1 --port 65503 --max-model-len 4096 --gpu-memory-utilization 0.15 --tensor-parallel-size 1 --served-model-name qwen3-embedding-0.6b --enforce-eager
+2026-03-17 13:53:47,465 [INFO] services.deploy_service: vLLM index started with PID: 576250
+2026-03-17 13:53:47,465 [INFO] services.deploy_service: Checking vLLM qa service at http://127.0.0.1:65504/v1/models...
+2026-03-17 13:53:53,474 [ERROR] services.deploy_service: vLLM qa service not ready after 5 seconds
+2026-03-17 13:53:53,474 [INFO] services.deploy_service: Starting vLLM qa with model: /home/NagaiYoru/LLM_model/Llama-3.2-3B-Instruct
+2026-03-17 13:53:53,474 [INFO] services.deploy_service: vLLM command: /home/NagaiYoru/LLM_tuning/UltraRAG/.venv/bin/python -m vllm.entrypoints.openai.api_server --model /home/NagaiYoru/LLM_model/Llama-3.2-3B-Instruct --trust-remote-code --host 127.0.0.1 --port 65504 --max-model-len 8192 --gpu-memory-utilization 0.85 --tensor-parallel-size 1 --served-model-name llama3-3b-instruct --enforce-eager
+2026-03-17 13:53:53,474 [INFO] services.deploy_service: vLLM qa started with PID: 576353
+2026-03-17 13:53:53,474 [INFO] services.deploy_service: Infrastructure started successfully
+2026-03-17 13:53:53,474 [INFO] __main__: No new papers, skipping indexing and QA
+2026-03-17 13:53:53,474 [INFO] __main__: 
+[Step 12] Sending email notification...
+2026-03-17 13:53:53,474 [INFO] __main__: Email notifications disabled in config
+2026-03-17 13:53:53,474 [INFO] __main__: 
+[Step 11.5] Stopping infrastructure...
+2026-03-17 13:53:53,474 [INFO] services.deploy_service: Stopping vLLM models...
+2026-03-17 13:53:53,474 [INFO] services.deploy_service: Stopping vLLM index (PID: 576250)
+2026-03-17 13:53:53,507 [INFO] services.deploy_service: vLLM index stopped gracefully
+2026-03-17 13:53:53,507 [INFO] services.deploy_service: Stopping vLLM qa (PID: 576353)
+2026-03-17 13:53:53,510 [INFO] services.deploy_service: vLLM qa stopped gracefully

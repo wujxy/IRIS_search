@@ -1,0 +1,40 @@
+2026-03-17 11:42:07,737 [INFO] utils.helpers: Logging initialized. Log file: logs/iris_20260317_114207.log
+2026-03-17 11:42:07,737 [INFO] __main__: ============================================================
+2026-03-17 11:42:07,737 [INFO] __main__: Starting IRIS Update Cycle
+2026-03-17 11:42:07,737 [INFO] __main__: ============================================================
+2026-03-17 11:42:07,737 [INFO] __main__: 
+[Step 1] Creating update folder...
+2026-03-17 11:42:07,738 [INFO] __main__: Update folder: /home/NagaiYoru/research/IRIS_papers/update_2026_03_17_1142
+2026-03-17 11:42:07,738 [INFO] __main__: 
+[Step 2] Loading existing paper entries...
+2026-03-17 11:42:07,738 [INFO] __main__: Found 0 existing papers in database
+2026-03-17 11:42:07,738 [INFO] __main__: 
+[Step 3] Initializing arXiv service...
+2026-03-17 11:42:07,738 [INFO] __main__: 
+[Step 4] Searching arXiv for papers...
+2026-03-17 11:42:07,738 [INFO] services.arxiv_service: Searching arXiv with keywords: ['neutrino', 'juno', 'dune', 'hyper-kamiokande', 'super-kamiokande', 'icecube', 'sno', 'kamland', 'borexino']
+2026-03-17 11:42:07,738 [INFO] arxiv: Requesting page (first: True, try: 0): https://export.arxiv.org/api/query?search_query=neutrino+OR+juno+OR+dune+OR+hyper-kamiokande+OR+super-kamiokande+OR+icecube+OR+sno+OR+kamland+OR+borexino&id_list=&sortBy=submittedDate&sortOrder=descending&start=0&max_results=100
+2026-03-17 11:42:09,168 [INFO] arxiv: Got first page: 100 of 41698 total results
+2026-03-17 11:42:09,169 [INFO] services.arxiv_service: Found 5 papers from arXiv
+2026-03-17 11:42:09,169 [INFO] __main__: 
+[Step 5] Filtering papers...
+2026-03-17 11:42:09,169 [INFO] services.arxiv_service: Filtering results: 5 new, 0 duplicates, 0 review papers
+2026-03-17 11:42:09,169 [INFO] __main__: 
+[Step 6] Downloading PDFs...
+2026-03-17 11:42:09,169 [INFO] services.arxiv_service: Downloading PDFs for 5 papers...
+2026-03-17 11:42:09,570 [ERROR] services.arxiv_service: Failed to download PDF for Probing the potential high-energy messengers of th...: 404 Client Error: Not Found for url: https://arxiv.org/pdf/2603.15570v1
+2026-03-17 11:42:09,987 [ERROR] services.arxiv_service: Failed to download PDF for Probing the neutrino mass through semileptonic mes...: 404 Client Error: Not Found for url: https://arxiv.org/pdf/2603.15461v1
+2026-03-17 11:42:10,386 [ERROR] services.arxiv_service: Failed to download PDF for Why Quarks and Leptons Demand Different Symmetries...: 404 Client Error: Not Found for url: https://arxiv.org/pdf/2603.15455v1
+2026-03-17 11:42:11,010 [ERROR] services.arxiv_service: Failed to download PDF for When One-Parameter Dark Energy Makes Neutrinos Phy...: 404 Client Error: Not Found for url: https://arxiv.org/pdf/2603.15422v1
+2026-03-17 11:42:11,402 [ERROR] services.arxiv_service: Failed to download PDF for A Minimal Realization of Radiative Dirac Neutrino ...: 404 Client Error: Not Found for url: https://arxiv.org/pdf/2603.15382v1
+2026-03-17 11:42:11,403 [INFO] services.arxiv_service: Successfully downloaded 0/5 PDFs
+2026-03-17 11:42:11,403 [INFO] __main__: 
+[Step 7] Saving metadata...
+2026-03-17 11:42:11,403 [INFO] __main__: 
+[Step 8] Generating update log...
+2026-03-17 11:42:11,403 [INFO] __main__: 
+[Step 8.5] Starting infrastructure...
+2026-03-17 11:42:11,403 [INFO] services.deploy_service: VllmControl initialized for index model
+2026-03-17 11:42:11,403 [INFO] services.deploy_service: VllmControl initialized for qa model
+2026-03-17 11:42:11,403 [INFO] services.deploy_service: DeployServer initialized
+2026-03-17 11:42:11,486 [INFO] services.deploy_service: Waiting for Milvus to be ready...

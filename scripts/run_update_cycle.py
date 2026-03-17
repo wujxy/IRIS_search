@@ -202,100 +202,53 @@ def run_update_cycle(config: dict):
             max_results=arxiv_config["max_results_per_keyword"],
             sort_by=arxiv_config["sort_by"],
             review_keywords=config["filtering"]["review_keywords"],
-            exclude_reviews=config["filtering"]["exclude_reviews"]
+            exclude_reviews=config["filtering"]["exclude_reviews"],
+            database_root=config["storage"]["database_root"]
         )
 
-        # Step 4: Search arXiv
-        logger.info("\n[Step 4] Searching arXiv for papers...")
-        papers = arxiv_service.search_papers()
-
-        # Step 5: Filter papers
-        logger.info("\n[Step 5] Filtering papers...")
-        filtered = arxiv_service.filter_papers(papers, existing_ids)
-
-        # Step 6: Download PDFs (with retry loop)
-        logger.info("\n[Step 6] Downloading PDFs...")
+        # Step 4: Manage papers (search, filter, download, export via arxiv_service)
+        logger.info("\n[Step 4] Managing papers via arxiv_service...")
         pdf_dir = update_folder / "pdfs"
+        management_result = arxiv_service.manage_papers(
+            save_dir=pdf_dir,
+            target_count=arxiv_config["max_results_per_keyword"]
+        )
 
-        downloaded_papers = []
-        failed_downloads = []
-        checked_ids = set()  # 记录已检查的论文 ID，避免重复
+        all_papers = management_result["papers"]
+        downloaded_papers = management_result["downloaded"]
+        new_papers = [p for p in all_papers if p.get("status") == "new"]
 
-        while len(downloaded_papers) < arxiv_service.max_results:
-            # 搜索一批论文
-            papers = arxiv_service.search_papers()
-
-            new_in_batch = False
-            for paper in papers:
-                # 跳过已检查的论文（已下载、已失败或已跳过）
-                if paper["entry_id"] in checked_ids:
-                    continue
-
-                # 标记为已检查
-                checked_ids.add(paper["entry_id"])
-
-                # 过滤论文（重复、综述）
-                filtered = arxiv_service.filter_papers([paper], existing_ids)
-
-                if filtered["new"]:
-                    paper = filtered["new"][0]
-                    logger.info(f"Downloading PDF for: {paper['title'][:60]}...")
-
-                    # 下载 PDF
-                    pdf_path, success = arxiv_service.download_pdf(paper, pdf_dir)
-                    paper["pdf_path"] = str(pdf_path) if pdf_path else None
-                    paper["download_success"] = success
-
-                    if success:
-                        downloaded_papers.append(paper)
-                        new_in_batch = True
-                        logger.info(f"Successfully downloaded: {paper['title'][:40]}...")
-                    else:
-                        failed_downloads.append(paper)
-                        paper["status"] = "download_failed"
-                        logger.warning(f"Failed to download PDF: {paper['title'][:40]}...")
-
-            # 如果没有新论文或已达到最大文章数，停止
-            if not new_in_batch:
-                logger.info("No new papers in this batch, stopping search...")
-                break
-
-        # 使用成功下载的论文进行后续处理
-        new_papers = downloaded_papers
-
-        # 添加下载失败的论文到 all_papers
-        all_papers = new_papers + filtered["duplicate"] + filtered["review"] + failed_downloads
-
-        # Step 7: Save metadata
-        logger.info("\n[Step 7] Saving metadata...")
+        # Step 5: Save metadata
+        logger.info("\n[Step 5] Saving metadata...")
         save_metadata(all_papers, update_folder / "metadata.json")
 
-        # Step 8: Generate update log
-        logger.info("\n[Step 8] Generating update log...")
+        # Step 6: Generate update log
+        logger.info("\n[Step 4] Generating update log...")
         metadata = {
             "timestamp": datetime.now().isoformat(),
             "total_papers": len(all_papers),
-            "new_papers": new_papers,
-            "duplicate_papers": filtered["duplicate"],
-            "review_papers": filtered["review"],
-            "failed_downloads": failed_downloads,
-            "all_papers": all_papers
+            "new_papers": [p for p in all_papers if p.get("status") == "new"],
+            "duplicate_papers": [p for p in all_papers if p.get("status") == "duplicate"],
+            "review_papers": [p for p in all_papers if p.get("status") == "review"],
+            "download_failed_papers": [p for p in all_papers if p.get("status") == "download_failed"],
+            "all_papers": all_papers,
+            "csv_file": management_result["summary"]["csv_path"]
         }
-        update_log = generate_update_log(metadata, update_folder, failed_downloads)
+        update_log = generate_update_log(metadata, update_folder)
         save_update_log(update_folder, update_log)
 
-        # Step 8.5: 启动基础设施（Milvus + vLLM 索引模型 + vLLM QA 模型）
-        logger.info("\n[Step 8.5] Starting infrastructure...")
+        # Step 5: Start infrastructure (Milvus + vLLM index model + vLLM QA model)
+        logger.info("\n[Step 5] Starting infrastructure...")
         deploy_server = DeployService(config)
 
         if not deploy_server.start_infrastructure():
             logger.error("Failed to start infrastructure")
             return False
 
-        # Step 9: Build index if there are new papers
+        # Step 6: Build index if there are new papers
         papers_with_answers = []
         if new_papers:
-            logger.info("\n[Step 9] Building index with UltraRAG...")
+            logger.info("\n[Step 6] Building index with UltraRAG...")
 
             # 生成批次命名的 collection_name
             collection_name = f"update_{datetime.now().strftime('%Y_%m_%d_%H%M')}"
@@ -320,9 +273,9 @@ def run_update_cycle(config: dict):
                 index_info = index_service.get_index_info(index_output_dir)
                 logger.info(f"Index created: {index_info['chunk_count']} chunks")
 
-                # Step 10: QA 处理（vLLM 模型已在 Step 8.5 中同时启动）
-                logger.info("\n[Step 10] QA processing...")
-                # vLLM 模型（索引和 QA）已在 Step 8.5 中同时启动
+                # Step 7: QA 处理（vLLM 模型已在 Step 5 中同时启动）
+                logger.info("\n[Step 7] QA processing...")
+                # vLLM 模型（索引和 QA）已在 Step 5 中同时启动
                 qa_service = QAService(
                     ultrarag_path=config["ultrarag"]["ultrarag_path"],
                     embedding_model=config["models"]["embedding_model_path"],
@@ -362,8 +315,8 @@ def run_update_cycle(config: dict):
                         })
                         logger.info(f"Generated summary for: {paper['title'][:50]}...")
 
-                        # Step 11: Generate summary and knowledge logs
-                        logger.info("\n[Step 11] Generating summary and knowledge logs...")
+                        # Step 8: Generate summary and knowledge logs
+                        logger.info("\n[Step 8] Generating summary and knowledge logs...")
                         summary_md = generate_summary_markdown(papers_with_answers)
                         knowledge_md = generate_knowledge_markdown(papers_with_answers)
 
@@ -380,8 +333,8 @@ def run_update_cycle(config: dict):
         else:
             logger.info("No new papers, skipping indexing and QA")
 
-        # Step 12: Send email notification
-        logger.info("\n[Step 12] Sending email notification...")
+        # Step 9: Send email notification
+        logger.info("\n[Step 9] Sending email notification...")
         if config["email"]["enabled"]:
             email_service = EmailService(
                 sender=config["email"]["sender"],
@@ -412,8 +365,8 @@ def run_update_cycle(config: dict):
         else:
             logger.info("Email notifications disabled in config")
 
-        # Step 11.5: 停止基础设施
-        logger.info("\n[Step 11.5] Stopping infrastructure...")
+        # Step 9.5: Stop infrastructure
+        logger.info("\n[Step 9.5] Stopping infrastructure...")
         deploy_server.stop_infrastructure()
         logger.info("Infrastructure stopped successfully")
 

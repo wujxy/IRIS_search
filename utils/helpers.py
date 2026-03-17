@@ -130,6 +130,7 @@ def save_metadata(papers: List[Dict[str, Any]], metadata_path: Path):
         "new_papers": [p for p in papers if p.get("status") == "new"],
         "duplicate_papers": [p for p in papers if p.get("status") == "duplicate"],
         "review_papers": [p for p in papers if p.get("status") == "review"],
+        "download_failed_papers": [p for p in papers if p.get("status") == "download_failed"],
         "all_papers": papers
     }
 

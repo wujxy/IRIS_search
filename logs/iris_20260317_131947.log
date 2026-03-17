@@ -1,0 +1,43 @@
+2026-03-17 13:19:47,317 [INFO] utils.helpers: Logging initialized. Log file: logs/iris_20260317_131947.log
+2026-03-17 13:19:47,318 [INFO] __main__: ============================================================
+2026-03-17 13:19:47,318 [INFO] __main__: Starting IRIS Update Cycle
+2026-03-17 13:19:47,318 [INFO] __main__: ============================================================
+2026-03-17 13:19:47,318 [INFO] __main__: 
+[Step 1] Creating update folder...
+2026-03-17 13:19:47,318 [INFO] __main__: Update folder: /home/NagaiYoru/research/IRIS_papers/update_2026_03_17_1319
+2026-03-17 13:19:47,318 [INFO] __main__: 
+[Step 2] Loading existing paper entries...
+2026-03-17 13:19:47,319 [INFO] __main__: Found 0 existing papers in database
+2026-03-17 13:19:47,319 [INFO] __main__: 
+[Step 3] Initializing arXiv service...
+2026-03-17 13:19:47,319 [INFO] __main__: 
+[Step 4] Searching arXiv for papers...
+2026-03-17 13:19:47,319 [INFO] services.arxiv_service: Searching arXiv with keywords: ['neutrino', 'juno', 'dune', 'hyper-kamiokande', 'super-kamiokande', 'sno', 'kamland', 'borexino']
+2026-03-17 13:19:47,319 [INFO] arxiv: Requesting page (first: True, try: 0): https://export.arxiv.org/api/query?search_query=neutrino+OR+juno+OR+dune+OR+hyper-kamiokande+OR+super-kamiokande+OR+sno+OR+kamland+OR+borexino&id_list=&sortBy=submittedDate&sortOrder=descending&start=0&max_results=100
+2026-03-17 13:19:49,680 [INFO] arxiv: Got first page: 100 of 41540 total results
+2026-03-17 13:19:49,681 [INFO] services.arxiv_service: Found 8 papers from arXiv
+2026-03-17 13:19:49,681 [INFO] __main__: 
+[Step 5] Filtering papers...
+2026-03-17 13:19:49,681 [INFO] services.arxiv_service: Filtering results: 8 new, 0 duplicates, 0 review papers, 0 too recent papers
+2026-03-17 13:19:49,681 [INFO] __main__: 
+[Step 6] Downloading PDFs...
+2026-03-17 13:19:49,681 [INFO] services.arxiv_service: Downloading PDFs for 8 papers...
+2026-03-17 13:19:50,079 [ERROR] services.arxiv_service: Failed to download PDF for Probing the potential high-energy messengers of th...: 404 Client Error: Not Found for url: https://arxiv.org/pdf/2603.15570v1
+2026-03-17 13:19:50,939 [INFO] services.arxiv_service: Downloaded PDF: Probing the neutrino mass through semileptonic mes... -> 2603.15461v1.pdf
+2026-03-17 13:19:51,360 [ERROR] services.arxiv_service: Failed to download PDF for Why Quarks and Leptons Demand Different Symmetries...: 404 Client Error: Not Found for url: https://arxiv.org/pdf/2603.15455v1
+2026-03-17 13:19:51,757 [ERROR] services.arxiv_service: Failed to download PDF for When One-Parameter Dark Energy Makes Neutrinos Phy...: 404 Client Error: Not Found for url: https://arxiv.org/pdf/2603.15422v1
+2026-03-17 13:19:53,502 [INFO] services.arxiv_service: Downloaded PDF: A Minimal Realization of Radiative Dirac Neutrino ... -> 2603.15382v1.pdf
+2026-03-17 13:19:53,915 [ERROR] services.arxiv_service: Failed to download PDF for A Simulation-Based Inference Evaluation of Tension...: 404 Client Error: Not Found for url: https://arxiv.org/pdf/2603.15322v1
+2026-03-17 13:19:54,324 [ERROR] services.arxiv_service: Failed to download PDF for Design and operation of a spark chamber for vacuum...: 404 Client Error: Not Found for url: https://arxiv.org/pdf/2603.15273v1
+2026-03-17 13:19:54,720 [ERROR] services.arxiv_service: Failed to download PDF for Glimpses of the X17 from coherent elastic neutrino...: 404 Client Error: Not Found for url: https://arxiv.org/pdf/2603.15246v1
+2026-03-17 13:19:54,722 [INFO] services.arxiv_service: Successfully downloaded 2/8 PDFs
+2026-03-17 13:19:54,723 [INFO] __main__: 
+[Step 7] Saving metadata...
+2026-03-17 13:19:54,723 [INFO] __main__: 
+[Step 8] Generating update log...
+2026-03-17 13:19:54,724 [INFO] __main__: 
+[Step 8.5] Starting infrastructure...
+2026-03-17 13:19:54,724 [INFO] services.deploy_service: VllmControl initialized for index model
+2026-03-17 13:19:54,724 [INFO] services.deploy_service: VllmControl initialized for qa model
+2026-03-17 13:19:54,724 [INFO] services.deploy_service: DeployServer initialized
+2026-03-17 13:19:54,802 [INFO] services.deploy_service: Waiting for Milvus to be ready...

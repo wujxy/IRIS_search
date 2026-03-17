@@ -1,0 +1,73 @@
+2026-03-17 15:39:01,332 [INFO] utils.helpers: Logging initialized. Log file: logs/iris_20260317_153901.log
+2026-03-17 15:39:01,332 [INFO] __main__: ============================================================
+2026-03-17 15:39:01,332 [INFO] __main__: Starting IRIS Update Cycle
+2026-03-17 15:39:01,333 [INFO] __main__: ============================================================
+2026-03-17 15:39:01,333 [INFO] __main__: 
+[Step 1] Creating update folder...
+2026-03-17 15:39:01,333 [INFO] __main__: Update folder: /home/NagaiYoru/research/IRIS_papers/update_2026_03_17_1539
+2026-03-17 15:39:01,333 [INFO] __main__: 
+[Step 2] Loading existing paper entries...
+2026-03-17 15:39:01,333 [INFO] __main__: Found 0 existing papers in database
+2026-03-17 15:39:01,333 [INFO] __main__: 
+[Step 3] Initializing arXiv service...
+2026-03-17 15:39:01,333 [INFO] __main__: 
+[Step 2] Managing papers via arxiv_service...
+2026-03-17 15:39:01,333 [INFO] services.arxiv_service: ============================================================
+2026-03-17 15:39:01,333 [INFO] services.arxiv_service: Starting Paper Management Workflow
+2026-03-17 15:39:01,333 [INFO] services.arxiv_service: ============================================================
+2026-03-17 15:39:01,333 [INFO] services.arxiv_service: 
+[Step 1] Searching arXiv incrementally...
+2026-03-17 15:39:01,333 [INFO] services.arxiv_service: Searching arXiv for papers since 
+2026-03-17 15:39:01,333 [INFO] arxiv: Requesting page (first: True, try: 0): https://export.arxiv.org/api/query?search_query=neutrino+OR+juno+OR+dune+OR+hyper-kamiokande+OR+super-kamiokande+OR+sno+OR+kamland+OR+borexino&id_list=&sortBy=submittedDate&sortOrder=descending&start=0&max_results=100
+2026-03-17 15:39:02,394 [INFO] arxiv: Got first page: 100 of 41540 total results
+2026-03-17 15:39:02,396 [INFO] services.arxiv_service: Found 20 papers from arXiv
+2026-03-17 15:39:02,396 [INFO] services.arxiv_service: 
+[Step 2] Filtering papers...
+2026-03-17 15:39:02,396 [INFO] services.arxiv_service: Filtering results: 19 new, 0 duplicates, 1 review papers
+2026-03-17 15:39:02,396 [INFO] services.arxiv_service: 
+[Step 3] Downloading PDFs with retry...
+2026-03-17 15:39:02,396 [INFO] services.arxiv_service: Filtering results: 0 new, 1 duplicates, 0 review papers
+2026-03-17 15:39:02,396 [INFO] services.arxiv_service: Filtering results: 0 new, 1 duplicates, 0 review papers
+2026-03-17 15:39:02,396 [INFO] services.arxiv_service: Filtering results: 0 new, 1 duplicates, 0 review papers
+2026-03-17 15:39:02,396 [INFO] services.arxiv_service: Filtering results: 0 new, 1 duplicates, 0 review papers
+2026-03-17 15:39:02,396 [INFO] services.arxiv_service: Filtering results: 0 new, 1 duplicates, 0 review papers
+2026-03-17 15:39:02,396 [INFO] services.arxiv_service: Filtering results: 0 new, 1 duplicates, 0 review papers
+2026-03-17 15:39:02,396 [INFO] services.arxiv_service: Filtering results: 0 new, 1 duplicates, 0 review papers
+2026-03-17 15:39:02,396 [INFO] services.arxiv_service: Filtering results: 0 new, 1 duplicates, 0 review papers
+2026-03-17 15:39:02,396 [INFO] services.arxiv_service: Filtering results: 0 new, 1 duplicates, 0 review papers
+2026-03-17 15:39:02,397 [INFO] services.arxiv_service: Filtering results: 0 new, 1 duplicates, 0 review papers
+2026-03-17 15:39:02,397 [INFO] services.arxiv_service: Filtering results: 0 new, 1 duplicates, 0 review papers
+2026-03-17 15:39:02,397 [INFO] services.arxiv_service: Filtering results: 0 new, 1 duplicates, 0 review papers
+2026-03-17 15:39:02,397 [INFO] services.arxiv_service: Filtering results: 0 new, 1 duplicates, 0 review papers
+2026-03-17 15:39:02,397 [INFO] services.arxiv_service: Filtering results: 0 new, 1 duplicates, 0 review papers
+2026-03-17 15:39:02,397 [INFO] services.arxiv_service: Filtering results: 0 new, 1 duplicates, 0 review papers
+2026-03-17 15:39:02,397 [INFO] services.arxiv_service: Filtering results: 0 new, 1 duplicates, 0 review papers
+2026-03-17 15:39:02,397 [INFO] services.arxiv_service: Filtering results: 0 new, 1 duplicates, 0 review papers
+2026-03-17 15:39:02,397 [INFO] services.arxiv_service: Filtering results: 0 new, 1 duplicates, 0 review papers
+2026-03-17 15:39:02,397 [INFO] services.arxiv_service: Filtering results: 0 new, 1 duplicates, 0 review papers
+2026-03-17 15:39:02,397 [INFO] services.arxiv_service: No new papers in this batch, stopping...
+2026-03-17 15:39:02,397 [INFO] services.arxiv_service: Downloaded 0 papers, failed 0
+2026-03-17 15:39:02,397 [INFO] services.arxiv_service: Saved 1 papers to CSV: /home/NagaiYoru/research/IRIS_papers/update_2026_03_17_1539/pdfs/papers.csv
+2026-03-17 15:39:02,397 [INFO] services.arxiv_service: 
+============================================================
+2026-03-17 15:39:02,397 [INFO] services.arxiv_service: Paper Management Summary:
+2026-03-17 15:39:02,397 [INFO] services.arxiv_service:   Total papers: 1
+2026-03-17 15:39:02,397 [INFO] services.arxiv_service:   New: 19
+2026-03-17 15:39:02,397 [INFO] services.arxiv_service:   Duplicate: 0
+2026-03-17 15:39:02,397 [INFO] services.arxiv_service:   Review: 1
+2026-03-17 15:39:02,397 [INFO] services.arxiv_service:   Downloaded: 0
+2026-03-17 15:39:02,397 [INFO] services.arxiv_service:   Failed: 0
+2026-03-17 15:39:02,397 [INFO] services.arxiv_service:   CSV file: /home/NagaiYoru/research/IRIS_papers/update_2026_03_17_1539/pdfs/papers.csv
+2026-03-17 15:39:02,397 [INFO] services.arxiv_service: ============================================================
+2026-03-17 15:39:02,397 [INFO] __main__: 
+[Step 3] Saving metadata...
+2026-03-17 15:39:02,398 [INFO] __main__: 
+[Step 4] Generating update log...
+2026-03-17 15:39:02,398 [INFO] __main__: 
+[Step 5] Starting infrastructure...
+2026-03-17 15:39:02,398 [INFO] services.deploy_service: VllmControl initialized for index model
+2026-03-17 15:39:02,398 [INFO] services.deploy_service: VllmControl initialized for qa model
+2026-03-17 15:39:02,398 [INFO] services.deploy_service: DeployServer initialized
+2026-03-17 15:39:02,413 [INFO] services.deploy_service: Waiting for Milvus to be ready...
+2026-03-17 15:39:12,419 [INFO] services.deploy_service: Starting vLLM models...
+2026-03-17 15:39:12,419 [INFO] services.deploy_service: Checking vLLM index service at http://127.0.0.1:65503/v1/models...

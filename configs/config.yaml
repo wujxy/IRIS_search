@@ -14,7 +14,7 @@ arxiv:
     - sno
     - kamland
     - borexino
-  max_results_per_keyword: 4
+  max_results_per_keyword: 10
   sort_by: SubmittedDate  # Options: SubmittedDate, LastUpdatedDate, Relevance
 
 storage:
@@ -39,8 +39,8 @@ ultrarag:
 
 milvus:
   enabled: true
-  container_name: milvus-ultrarag
-  data_dir: /home/NagaiYoru/LLM_tuning/UltraRAG/milvus_test
+  container_name: iris-milvus
+  data_dir: /home/NagaiYoru/research/IRIS_papers/iris-milvus
   grpc_port: 29901
   http_port: 29902
   image: milvusdb/milvus:latest
