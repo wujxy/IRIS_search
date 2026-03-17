@@ -540,14 +540,16 @@ class ArxivService:
     def manage_papers(
         self,
         save_dir: Path,
-        target_count: int = None
+        target_count: int = None,
+        csv_dir: Path = None
     ) -> Dict[str, Any]:
         """
         Complete paper management workflow: search, filter, download, export.
 
         Args:
-            save_dir: Directory to save PDFs and CSV
+            save_dir: Directory to save PDFs
             target_count: Target number of papers to process
+            csv_dir: Directory to save CSV file (defaults to save_dir.parent)
 
         Returns:
             Dictionary containing:
@@ -579,8 +581,9 @@ class ArxivService:
         # Combine all processed papers
         all_papers = processed_papers + filtered["duplicate"] + filtered["review"]
 
-        # Step 4: Export to CSV
-        csv_path = save_dir / "papers.csv"
+        # Step 4: Export to CSV (save to parent directory of save_dir)
+        csv_dir = csv_dir or save_dir.parent
+        csv_path = csv_dir / "papers.csv"
         self.save_to_csv(all_papers, csv_path)
 
         # Summary
