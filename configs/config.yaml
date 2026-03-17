@@ -44,7 +44,7 @@ storage:
 # ============================================================================
 ultrarag:
   ultrarag_path: /home/NagaiYoru/LLM_tuning/UltraRAG
-  index_backend: milvus  # Fixed to milvus
+  index_backend: milvus  # database type
   index_storage: /home/NagaiYoru/research/IRIS_papers/index_storage
   # UltraRAG pipeline configurations
   pipelines:

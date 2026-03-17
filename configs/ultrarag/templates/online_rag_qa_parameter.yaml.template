@@ -115,7 +115,7 @@ generation:
   backend: openai
   system_prompt: __SYSTEM_PROMPT__
 prompt:
-  template: prompt/qa_boxed.jinja
+  template: prompt/qa_rag_boxed.jinja
 custom: {}
 evaluation:
   metrics:
