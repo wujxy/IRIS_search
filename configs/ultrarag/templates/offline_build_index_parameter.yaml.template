@@ -15,7 +15,7 @@ corpus:
   tokenizer_or_token_counter: character
   chunk_size: 512
   chunk_path: __CHUNKS_OUTPUT_PATH__
-  use_title: false
+  use_title: __USE_TITLE__
 retriever:
   model_name_or_path: __EMBEDDING_MODEL_PATH__
   backend_configs:

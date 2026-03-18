@@ -149,6 +149,133 @@ class QAService:
             # Clean up temporary file
             Path(questions_file).unlink(missing_ok=True)
 
+    def _filter_chunks_by_paper_id(
+        self,
+        chunks_path: Path,
+        paper_id: str
+    ) -> Path:
+        """
+        Filter chunks.jsonl to only include chunks from specified paper.
+
+        Args:
+            chunks_path: Path to original chunks.jsonl
+            paper_id: Paper ID to filter by (e.g., "2401.12345")
+
+        Returns:
+            Path to filtered chunks.jsonl
+        """
+        import tempfile
+        import re
+
+        # 创建临时文件用于存储过滤后的chunks
+        filtered_path = Path(tempfile.mktemp(suffix='.jsonl'))
+
+        filtered_count = 0
+        total_count = 0
+
+        # Normalize paper_id for matching (e.g., "2401.12345")
+        # doc_id might be "2401.12345v1.pdf" or "2401.12345v1" or similar
+        paper_id_base = paper_id.split('v')[0]  # Remove version suffix if present
+
+        with open(chunks_path, 'r', encoding='utf-8') as infile, \
+             open(filtered_path, 'w', encoding='utf-8') as outfile:
+
+            for line in infile:
+                total_count += 1
+                chunk = json.loads(line.strip())
+
+                # Check if chunk belongs to target paper
+                match = False
+
+                # Method 1: Check doc_id field (UltraRAG structure)
+                doc_id = chunk.get('doc_id', '')
+                if doc_id:
+                    # Remove .pdf extension and version for comparison
+                    doc_id_clean = doc_id.replace('.pdf', '').split('v')[0]
+                    if doc_id_clean == paper_id or doc_id_clean == paper_id_base:
+                        match = True
+
+                # Method 2: Check title field (contains paper ID or matches)
+                if not match:
+                    title = chunk.get('title', '')
+                    # Title might contain the paper ID or be the paper ID itself
+                    title_match = re.search(r'\b' + re.escape(paper_id) + r'\b', title)
+                    title_match_base = re.search(r'\b' + re.escape(paper_id_base) + r'\b', title)
+                    if title_match or title_match_base:
+                        match = True
+
+                # 保留匹配的chunk
+                if match:
+                    outfile.write(line)
+                    filtered_count += 1
+
+        logger.info(f"Filtered chunks: {filtered_count}/{total_count} for paper {paper_id}")
+
+        return filtered_path
+
+    def query_knowledge_base_with_mode(
+        self,
+        questions: List[str],
+        chunks_path: Path,
+        mode: str = "global",
+        paper_id: str = None,
+        collection_name: str = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Query knowledge base with specified mode.
+
+        Args:
+            questions: List of questions to ask
+            chunks_path: Path to chunks.jsonl file
+            mode: Query mode - "global" (all papers) or "specific" (single paper)
+            paper_id: Paper ID for specific mode (e.g., "2401.12345")
+            collection_name: Milvus collection name
+
+        Returns:
+            List of result dictionaries
+        """
+        collection_name = collection_name or self.collection_name
+
+        if mode == "specific" and not paper_id:
+            raise ValueError("paper_id is required for specific mode")
+
+        logger.info(f"Querying knowledge base in {mode} mode with {len(questions)} questions")
+        if mode == "specific":
+            logger.info(f"Filtering by paper_id: {paper_id}")
+
+        # 根据模式处理chunks
+        if mode == "specific":
+            # Specific模式：预处理过滤chunks
+            filtered_chunks_path = self._filter_chunks_by_paper_id(
+                chunks_path,
+                paper_id
+            )
+            chunks_to_use = filtered_chunks_path
+        else:
+            # Global模式：使用所有chunks
+            chunks_to_use = chunks_path
+
+        # 创建问题文件
+        import tempfile
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.jsonl', delete=False) as f:
+            for idx, q in enumerate(questions):
+                json.dump({"id": idx, "question": q}, f, ensure_ascii=False)
+                f.write('\n')
+            questions_file = f.name
+
+        try:
+            results = self._run_qa_batch(
+                questions_file=questions_file,
+                chunks_path=chunks_to_use,
+                collection_name=collection_name
+            )
+            return results if results else []
+        finally:
+            # 清理临时文件
+            Path(questions_file).unlink(missing_ok=True)
+            if mode == "specific" and chunks_to_use != chunks_path:
+                chunks_to_use.unlink(missing_ok=True)
+
     def _run_qa_batch(
         self,
         questions_file: str,

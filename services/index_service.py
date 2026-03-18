@@ -119,6 +119,8 @@ class IndexService:
             "INDEX_BASE_URL": "http://127.0.0.1:65503/v1",
             "INDEX_MODEL_NAME": "qwen3-embedding-0.6b",
             "OVERWRITE": str(overwrite).lower(),
+            # Enable paper_id metadata for QA specific mode
+            "USE_TITLE": "true",
         }
 
         self._create_runtime_parameter(self.parameter_template, runtime_param, replacements)

@@ -19,6 +19,7 @@ arxiv:
 
 storage:
   database_root: /home/NagaiYoru/research/IRIS_papers
+  paper_db_path: /home/NagaiYoru/research/IRIS_papers/iris_papers.db
   # Each update creates a timestamped folder structure:
   # update_YYYY_MM_DD_HHMM/
   #   ├── pdfs/

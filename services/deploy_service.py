@@ -93,7 +93,7 @@ class MilvusControl:
             cmd = ["docker", "start", self.container_name]
         else:
             # Container doesn't exist, create new one
-            logger.info(f"Creating new container")
+            logger.warn(f"Container does not exist, Creating new container")
             cmd = [
                 "docker", "run", "-d",
                 "--name", self.container_name,
@@ -217,7 +217,7 @@ class VllmControl:
 
             time.sleep(2)
 
-        logger.error(f"vLLM {self.model_type} service not ready after {timeout} seconds")
+        logger.warn(f"vLLM {self.model_type} service not ready after {timeout} seconds")
         return False
 
     def start(self) -> bool:
