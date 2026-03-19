@@ -87,7 +87,7 @@ ultrarag:
 milvus:
   uri: http://localhost:29901
   collection_name: iris_papers
-  embedding_dim: 768
+  embedding_dim: 1024
   enabled: true
 
 embedding:

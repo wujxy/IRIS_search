@@ -81,17 +81,18 @@ class DocumentProcessor:
 
         Raises:
             FileNotFoundError: If PDF file doesn't exist
-            ValueError: If PDF parsing fails
         """
         pdf_path = Path(pdf_path)
 
         if not pdf_path.exists():
             raise FileNotFoundError(f"PDF file not found: {pdf_path}")
 
+        doc = None
         try:
+            # 1. 打开 PDF
             doc = fitz.open(str(pdf_path))
 
-            # Extract title from filename or first page
+            # 2. 提取标题（从文件名或第一页）
             title = pdf_path.stem
             try:
                 first_page = doc[0]
@@ -105,18 +106,66 @@ class DocumentProcessor:
             except Exception:
                 pass
 
-            # Extract all text
+            # 3. 提取所有文本（使用更稳健的方法）
             contents = ""
-            for page in doc:
-                page_text = page.get_text()
-                contents += page_text + "\n"
 
-            doc.close()
+            # 方法 1：尝试使用 get_text("blocks") 类似 UltraRAG
+            try:
+                texts = []
+                for pg in doc:
+                    try:
+                        blocks = pg.get_text("blocks")
+                        if blocks:
+                            # 按位置排序（y0, x0）
+                            blocks.sort(key=lambda b: (b[1], b[0]))
+                            # 只取文本内容（b[4]）
+                            page_text = "\n".join([b[4] for b in blocks if b[4] and b[4].strip()])
+                            if page_text.strip():
+                                texts.append(page_text)
+                        else:
+                            # 回退到 get_text()
+                            page_text = pg.get_text()
+                            if page_text and page_text.strip():
+                                texts.append(page_text)
+                    except Exception as e:
+                        logger.warning(f"Failed to extract from page {pg}: {e}")
+                        # 回退
+                        try:
+                            page_text = pg.get_text()
+                            if page_text and page_text.strip():
+                                texts.append(page_text)
+                        except Exception:
+                            pass
 
-            # Extract paper ID from filename
+                contents = "\n\n".join(texts)
+
+            except Exception as e:
+                # 方法 2：回退到简单 get_text()
+                logger.warning(f"Using fallback text extraction for {pdf_path.name}: {e}")
+                contents = ""
+                try:
+                    for page in doc:
+                        page_text = page.get_text()
+                        if page_text:
+                            contents += page_text + "\n"
+                except Exception as e2:
+                    logger.error(f"Text extraction failed: {e2}")
+                    contents = ""
+
+            # 5. 提取 paper ID
             paper_id = pdf_path.stem.replace('_', '.')
 
-            logger.debug(f"Parsed PDF: {pdf_path.name}, pages={len(doc)}, chars={len(contents)}")
+            # 在关闭文档前获取页数
+            page_count = len(doc) if doc else 0
+
+            logger.debug(f"Parsed PDF: {pdf_path.name}, pages={page_count}, chars={len(contents)}")
+
+            # 4. 关闭文档
+            if doc is not None:
+                try:
+                    doc.close()
+                except Exception:
+                    pass
 
             return {
                 "id": paper_id,
@@ -124,9 +173,16 @@ class DocumentProcessor:
                 "contents": contents.strip()
             }
 
+        except FileNotFoundError:
+            raise
         except Exception as e:
+            # 改进：返回空内容而不是抛出异常，让流程可以继续
             logger.error(f"Failed to parse PDF {pdf_path}: {e}")
-            raise ValueError(f"PDF parsing failed: {e}") from e
+            return {
+                "id": pdf_path.stem,
+                "title": pdf_path.stem,
+                "contents": ""
+            }
 
     def chunk_text(
         self,

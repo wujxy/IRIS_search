@@ -2,101 +2,203 @@
 [0;32m[INFO][0m Python environment: .venv/bin/python
 [0;32m[INFO][0m Configuration file: /home/NagaiYoru/LLM_tuning/IRIS_search/configs/config.yaml
 [0;32m[INFO][0m Running update cycle...
-2026-03-19 14:54:01,580 [INFO] utils.helpers: Logging initialized. Log file: logs/iris_20260319_145401.log
-2026-03-19 14:54:01,580 [INFO] __main__: ============================================================
-2026-03-19 14:54:01,580 [INFO] __main__: Starting IRIS Update Cycle
-2026-03-19 14:54:01,580 [INFO] __main__: ============================================================
-2026-03-19 14:54:01,580 [INFO] __main__: 
+2026-03-19 18:25:08,459 [INFO] utils.helpers: Logging initialized. Log file: logs/iris_20260319_182508.log
+2026-03-19 18:25:08,459 [INFO] __main__: ============================================================
+2026-03-19 18:25:08,459 [INFO] __main__: Starting IRIS Update Cycle
+2026-03-19 18:25:08,459 [INFO] __main__: ============================================================
+2026-03-19 18:25:08,459 [INFO] __main__: 
 [Step 1] Creating update folder...
-2026-03-19 14:54:01,580 [INFO] __main__: Update folder: /home/NagaiYoru/research/IRIS_papers/update_2026_03_19_1454
-2026-03-19 14:54:01,580 [INFO] __main__: 
+2026-03-19 18:25:08,459 [INFO] __main__: Update folder: /home/NagaiYoru/research/IRIS_papers/update_2026_03_19_1825
+2026-03-19 18:25:08,459 [INFO] __main__: 
 [Step 2] Loading existing paper entries...
-2026-03-19 14:54:01,580 [INFO] __main__: Found 0 existing papers in database
-2026-03-19 14:54:01,580 [INFO] __main__: 
+2026-03-19 18:25:08,460 [INFO] __main__: Found 0 existing papers in database
+2026-03-19 18:25:08,460 [INFO] __main__: 
 [Step 3] Initializing arXiv service...
-2026-03-19 14:54:01,580 [INFO] __main__: 
+2026-03-19 18:25:08,460 [INFO] __main__: 
 [Step 4] Managing papers via arxiv_service...
-2026-03-19 14:54:01,580 [INFO] services.arxiv_service: ============================================================
-2026-03-19 14:54:01,580 [INFO] services.arxiv_service: Starting Paper Management Workflow
-2026-03-19 14:54:01,580 [INFO] services.arxiv_service: ============================================================
-2026-03-19 14:54:01,580 [INFO] services.arxiv_service: 
+2026-03-19 18:25:08,460 [INFO] services.arxiv_service: ============================================================
+2026-03-19 18:25:08,460 [INFO] services.arxiv_service: Starting Paper Management Workflow
+2026-03-19 18:25:08,460 [INFO] services.arxiv_service: ============================================================
+2026-03-19 18:25:08,460 [INFO] services.arxiv_service: 
 [Step 1] Searching arXiv incrementally...
-2026-03-19 14:54:01,580 [INFO] services.arxiv_service: Searching arXiv for papers since 
-2026-03-19 14:54:01,581 [INFO] arxiv: Requesting page (first: True, try: 0): https://export.arxiv.org/api/query?search_query=neutrino+OR+juno+OR+dune+OR+hyper-kamiokande+OR+super-kamiokande+OR+sno+OR+kamland+OR+borexino&id_list=&sortBy=submittedDate&sortOrder=descending&start=0&max_results=100
-2026-03-19 14:54:04,416 [INFO] arxiv: Got first page: 100 of 41564 total results
-2026-03-19 14:54:04,417 [INFO] services.arxiv_service: Found 2 papers from arXiv after time filter
-2026-03-19 14:54:04,417 [INFO] services.arxiv_service: 
+2026-03-19 18:25:08,460 [INFO] services.arxiv_service: Searching arXiv for papers since 
+2026-03-19 18:25:08,460 [INFO] arxiv: Requesting page (first: True, try: 0): https://export.arxiv.org/api/query?search_query=neutrino+OR+juno+OR+dune+OR+hyper-kamiokande+OR+super-kamiokande+OR+sno+OR+kamland+OR+borexino&id_list=&sortBy=submittedDate&sortOrder=descending&start=0&max_results=100
+2026-03-19 18:25:09,493 [INFO] arxiv: Got first page: 100 of 41564 total results
+2026-03-19 18:25:09,494 [INFO] services.arxiv_service: Found 2 papers from arXiv after time filter
+2026-03-19 18:25:09,494 [INFO] services.arxiv_service: 
 [Step 2] Filtering papers...
-2026-03-19 14:54:04,418 [INFO] services.arxiv_service: Filtering results: 2 new, 0 duplicates, 0 review papers
-2026-03-19 14:54:04,418 [INFO] services.arxiv_service: 
+2026-03-19 18:25:09,494 [INFO] services.arxiv_service: Filtering results: 2 new, 0 duplicates, 0 review papers
+2026-03-19 18:25:09,494 [INFO] services.arxiv_service: 
 [Step 3] Downloading PDFs with retry...
-2026-03-19 14:54:04,418 [INFO] services.arxiv_service: Downloading PDF for: Embedding light dark matter and small neutrino mass in the f...
-2026-03-19 14:54:05,270 [INFO] services.arxiv_service: Downloaded PDF: Embedding light dark matter and small neutrino mas... -> 2603.17994v1.pdf
-2026-03-19 14:54:05,271 [INFO] services.arxiv_service: Successfully downloaded: Embedding light dark matter and small ne...
-2026-03-19 14:54:05,271 [INFO] services.arxiv_service: Downloading PDF for: Low Energy Phonon Bursts Created By Fast Neutron Damage...
-2026-03-19 14:54:06,711 [INFO] services.arxiv_service: Downloaded PDF: Low Energy Phonon Bursts Created By Fast Neutron D... -> 2603.17964v1.pdf
-2026-03-19 14:54:06,712 [INFO] services.arxiv_service: Successfully downloaded: Low Energy Phonon Bursts Created By Fast...
-2026-03-19 14:54:06,712 [INFO] services.arxiv_service: Downloaded 2 papers, failed 0
-2026-03-19 14:54:06,712 [INFO] services.arxiv_service: Saved 2 papers to CSV: /home/NagaiYoru/research/IRIS_papers/update_2026_03_19_1454/papers.csv
-2026-03-19 14:54:06,712 [INFO] services.arxiv_service: 
+2026-03-19 18:25:09,494 [INFO] services.arxiv_service: Downloading PDF for: Embedding light dark matter and small neutrino mass in the f...
+2026-03-19 18:25:10,199 [INFO] services.arxiv_service: Downloaded PDF: Embedding light dark matter and small neutrino mas... -> 2603.17994v1.pdf
+2026-03-19 18:25:10,200 [INFO] services.arxiv_service: Successfully downloaded: Embedding light dark matter and small ne...
+2026-03-19 18:25:10,200 [INFO] services.arxiv_service: Downloading PDF for: Low Energy Phonon Bursts Created By Fast Neutron Damage...
+2026-03-19 18:25:11,258 [INFO] services.arxiv_service: Downloaded PDF: Low Energy Phonon Bursts Created By Fast Neutron D... -> 2603.17964v1.pdf
+2026-03-19 18:25:11,258 [INFO] services.arxiv_service: Successfully downloaded: Low Energy Phonon Bursts Created By Fast...
+2026-03-19 18:25:11,258 [INFO] services.arxiv_service: Downloaded 2 papers, failed 0
+2026-03-19 18:25:11,259 [INFO] services.arxiv_service: Saved 2 papers to CSV: /home/NagaiYoru/research/IRIS_papers/update_2026_03_19_1825/papers.csv
+2026-03-19 18:25:11,259 [INFO] services.arxiv_service: 
 ============================================================
-2026-03-19 14:54:06,712 [INFO] services.arxiv_service: Paper Management Summary:
-2026-03-19 14:54:06,712 [INFO] services.arxiv_service:   Total papers: 2
-2026-03-19 14:54:06,712 [INFO] services.arxiv_service:   New: 2
-2026-03-19 14:54:06,712 [INFO] services.arxiv_service:   Duplicate: 0
-2026-03-19 14:54:06,712 [INFO] services.arxiv_service:   Review: 0
-2026-03-19 14:54:06,712 [INFO] services.arxiv_service:   Downloaded: 2
-2026-03-19 14:54:06,712 [INFO] services.arxiv_service:   Failed: 0
-2026-03-19 14:54:06,712 [INFO] services.arxiv_service:   CSV file: /home/NagaiYoru/research/IRIS_papers/update_2026_03_19_1454/papers.csv
-2026-03-19 14:54:06,712 [INFO] services.arxiv_service: ============================================================
-2026-03-19 14:54:06,712 [INFO] __main__: 
-[Step 4.5] Adding papers to SQLite database...
-2026-03-19 14:54:06,787 [INFO] services.paper_service: Database tables and indexes initialized
-2026-03-19 14:54:06,787 [INFO] services.paper_service: Paper service initialized with database: /home/NagaiYoru/research/IRIS_papers/iris_papers.db
-2026-03-19 14:54:06,807 [INFO] services.paper_service: Batch added 2/2 papers
-2026-03-19 14:54:06,807 [INFO] __main__: Added 2 papers to SQLite database
-2026-03-19 14:54:06,807 [INFO] __main__: 
+2026-03-19 18:25:11,259 [INFO] services.arxiv_service: Paper Management Summary:
+2026-03-19 18:25:11,259 [INFO] services.arxiv_service:   Total papers: 2
+2026-03-19 18:25:11,259 [INFO] services.arxiv_service:   New: 2
+2026-03-19 18:25:11,259 [INFO] services.arxiv_service:   Duplicate: 0
+2026-03-19 18:25:11,259 [INFO] services.arxiv_service:   Review: 0
+2026-03-19 18:25:11,259 [INFO] services.arxiv_service:   Downloaded: 2
+2026-03-19 18:25:11,259 [INFO] services.arxiv_service:   Failed: 0
+2026-03-19 18:25:11,259 [INFO] services.arxiv_service:   CSV file: /home/NagaiYoru/research/IRIS_papers/update_2026_03_19_1825/papers.csv
+2026-03-19 18:25:11,259 [INFO] services.arxiv_service: ============================================================
+2026-03-19 18:25:11,259 [INFO] __main__: 
 [Step 5] Saving metadata...
-2026-03-19 14:54:06,807 [INFO] __main__: 
+2026-03-19 18:25:11,259 [INFO] __main__: 
 [Step 4] Generating update log...
-2026-03-19 14:54:06,807 [INFO] services.deploy_service: VllmControl initialized for index model
-2026-03-19 14:54:06,808 [INFO] services.deploy_service: VllmControl initialized for qa model
-2026-03-19 14:54:06,808 [INFO] services.deploy_service: DeployServer initialized
-2026-03-19 14:54:06,808 [INFO] __main__: 
-[Step 6] Building index with UltraRAG...
-2026-03-19 14:54:06,808 [INFO] __main__: 
+2026-03-19 18:25:11,259 [INFO] __main__: 
 [Step 5] Starting infrastructure...
-2026-03-19 14:54:06,823 [INFO] services.deploy_service: Starting Milvus container: iris-milvus
-2026-03-19 14:54:06,833 [WARNING] services.deploy_service: Container does not exist, Creating new container
-08e66c12c1ffb2ff982802e9b99be6c656b6c5e3d36b30387fdcff17393b6004
-2026-03-19 14:54:07,100 [INFO] services.deploy_service: Milvus container started
-2026-03-19 14:54:07,101 [INFO] services.deploy_service: Waiting for Milvus to be ready...
-2026-03-19 14:54:17,110 [INFO] services.deploy_service: Starting vLLM models...
-2026-03-19 14:54:17,110 [INFO] services.deploy_service: Checking vLLM index service at http://127.0.0.1:65503/v1/models...
-2026-03-19 14:54:17,112 [INFO] services.deploy_service: vLLM index service is ready
-2026-03-19 14:54:17,112 [INFO] services.deploy_service: Checking vLLM qa service at http://127.0.0.1:65504/v1/models...
-2026-03-19 14:54:17,114 [INFO] services.deploy_service: vLLM qa service is ready
-2026-03-19 14:54:17,114 [INFO] services.deploy_service: Infrastructure started successfully
-2026-03-19 14:54:17,251 [INFO] infrastructure.embedding_service: Embedding service initialized: http://127.0.0.1:65503/v1, model=qwen3-embedding-0.6b, batch_size=32
-2026-03-19 14:54:17,251 [INFO] infrastructure.milvus_service: Milvus service initialized: http://localhost:29901/iris_papers_master, dim=768
-2026-03-19 14:54:17,251 [INFO] infrastructure.document_processor: Document processor initialized: chunk_size=512, overlap=50, semantic=False
-2026-03-19 14:54:17,251 [INFO] core.index_service: IndexService initialized: chunk_size=512, overlap=50, semantic=False
-2026-03-19 14:54:17,252 [INFO] __main__: Index created but chunk count not available
-2026-03-19 14:54:17,252 [INFO] __main__: 
+2026-03-19 18:25:11,259 [INFO] services.deploy_service: VllmControl initialized for index model
+2026-03-19 18:25:11,259 [INFO] services.deploy_service: VllmControl initialized for qa model
+2026-03-19 18:25:11,259 [INFO] services.deploy_service: DeployServer initialized
+2026-03-19 18:25:11,272 [INFO] services.deploy_service: Starting Milvus container: iris-milvus
+2026-03-19 18:25:11,283 [WARNING] services.deploy_service: Container does not exist, Creating new container
+0f6c3230e7ae7736d84c517efbc024b649ce4a5f9bdc8b7624edccc4ffbcc744
+2026-03-19 18:25:11,590 [INFO] services.deploy_service: Milvus container started
+2026-03-19 18:25:11,590 [INFO] services.deploy_service: Waiting for Milvus to be ready...
+2026-03-19 18:25:21,591 [INFO] services.deploy_service: Starting vLLM models...
+2026-03-19 18:25:21,591 [INFO] services.deploy_service: Checking vLLM index service at http://127.0.0.1:65503/v1/models...
+2026-03-19 18:25:21,597 [INFO] services.deploy_service: vLLM index service is ready
+2026-03-19 18:25:21,597 [INFO] services.deploy_service: Checking vLLM qa service at http://127.0.0.1:65504/v1/models...
+2026-03-19 18:25:21,600 [INFO] services.deploy_service: vLLM qa service is ready
+2026-03-19 18:25:21,601 [INFO] services.deploy_service: Infrastructure started successfully
+2026-03-19 18:25:21,601 [INFO] __main__: 
+[Step 6] Building index with new services...
+2026-03-19 18:25:21,657 [INFO] infrastructure.embedding_service: Embedding service initialized: http://127.0.0.1:65503/v1, model=qwen3-embedding-0.6b, batch_size=32
+2026-03-19 18:25:21,657 [INFO] infrastructure.milvus_service: Milvus service initialized: http://localhost:29901/iris_papers, dim=1024
+2026-03-19 18:25:21,657 [INFO] infrastructure.document_processor: Document processor initialized: chunk_size=512, overlap=50, semantic=False
+2026-03-19 18:25:21,657 [INFO] core.index_service: IndexService initialized: chunk_size=512, overlap=50, semantic=False
+2026-03-19 18:25:21,657 [INFO] core.index_service: IndexService created from config
+2026-03-19 18:25:21,658 [INFO] core.index_service: Starting indexing: pdf_dir=/home/NagaiYoru/research/IRIS_papers/update_2026_03_19_1825/pdfs, output_dir=/home/NagaiYoru/research/IRIS_papers/update_2026_03_19_1825/index_storage
+2026-03-19 18:25:21,676 [INFO] infrastructure.milvus_service: Creating collection: 'iris_papers' with dim=1024
+2026-03-19 18:25:22,650 [INFO] infrastructure.milvus_service: Successfully created collection: 'iris_papers'
+2026-03-19 18:25:22,652 [INFO] core.index_service: Found 2 PDF files to process
+2026-03-19 18:25:22,823 [INFO] infrastructure.document_processor: Chunked text into 171 chunks
+2026-03-19 18:25:22,862 [INFO] infrastructure.document_processor: Chunked text into 82 chunks
+2026-03-19 18:25:22,863 [INFO] core.index_service: Generating embeddings for 253 chunks...
+2026-03-19 18:25:23,705 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-19 18:25:23,819 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-19 18:25:23,937 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-19 18:25:24,046 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-19 18:25:24,182 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-19 18:25:24,316 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-19 18:25:24,446 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-19 18:25:24,597 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-19 18:25:24,603 [INFO] infrastructure.embedding_service: Encoded 253 texts, shape=(253, 1024)
+2026-03-19 18:25:24,604 [INFO] core.index_service: Inserting 253 chunks into Milvus...
+2026-03-19 18:25:24,604 [INFO] infrastructure.milvus_service: Inserting 253 chunks into 'iris_papers'
+Inserting to Milvus:   0%|          | 0/253 [00:00<?, ?chunk/s]Inserting to Milvus: 100%|██████████| 253/253 [00:00<00:00, 6337.77chunk/s]
+2026-03-19 18:25:25,160 [INFO] infrastructure.milvus_service: Successfully inserted 253 chunks into 'iris_papers'
+2026-03-19 18:25:25,164 [INFO] core.index_service: Indexing complete: 253 chunks from 2 papers
+2026-03-19 18:25:25,164 [INFO] __main__: Index created successfully
+2026-03-19 18:25:25,164 [INFO] __main__: 
 [Step 7] QA processing...
-2026-03-19 14:54:17,279 [INFO] infrastructure.embedding_service: Embedding service initialized: http://127.0.0.1:65503/v1, model=qwen3-embedding-0.6b, batch_size=32
-2026-03-19 14:54:17,280 [INFO] infrastructure.milvus_service: Milvus service initialized: http://localhost:29901/iris_papers_master, dim=768
-2026-03-19 14:54:17,280 [INFO] core.retriever: Retriever initialized: default_top_k=5, retrieval_top_k=15, reranker_enabled=False
-2026-03-19 14:54:17,280 [ERROR] __main__: Error during update cycle: 'vllm'
-Traceback (most recent call last):
-  File "/home/NagaiYoru/LLM_tuning/IRIS_search/scripts/run_update_cycle.py", line 343, in run_update_cycle
-    base_url=config["models"]["vllm"]["base_url"],
-KeyError: 'vllm'
-2026-03-19 14:54:17,280 [INFO] __main__: 
+2026-03-19 18:25:25,164 [INFO] infrastructure.milvus_service: Milvus service initialized: http://localhost:29901/iris_papers, dim=1024
+2026-03-19 18:25:25,192 [INFO] infrastructure.embedding_service: Embedding service initialized: http://127.0.0.1:65503/v1, model=qwen3-embedding-0.6b, batch_size=32
+2026-03-19 18:25:25,192 [INFO] core.retriever: Retriever initialized: default_top_k=5, retrieval_top_k=15, reranker_enabled=False
+2026-03-19 18:25:25,192 [INFO] core.retriever: Retriever created from config
+2026-03-19 18:25:25,220 [INFO] core.qa_service: QA Service initialized: model=llama3-3b-instruct, temperature=0.7, max_tokens=2048
+2026-03-19 18:25:25,220 [INFO] core.qa_service: QAService created from config
+2026-03-19 18:25:25,230 [INFO] core.qa_service: Querying: 'What is the main problem this paper addresses?', mode=specific
+2026-03-19 18:25:25,230 [INFO] core.retriever: Retrieving for query: 'What is the main problem this paper addresses?', mode=specific, top_k=5
+2026-03-19 18:25:25,248 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-19 18:25:25,249 [INFO] infrastructure.embedding_service: Encoded 1 texts, shape=(1, 1024)
+2026-03-19 18:25:25,262 [INFO] core.retriever: Returning 1 results
+2026-03-19 18:25:26,037 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-19 18:25:26,043 [INFO] core.qa_service: Generated answer: 49 chars
+2026-03-19 18:25:26,043 [INFO] core.qa_service: Querying: 'What are the key contributions of this paper?', mode=specific
+2026-03-19 18:25:26,043 [INFO] core.retriever: Retrieving for query: 'What are the key contributions of this paper?', mode=specific, top_k=5
+2026-03-19 18:25:26,745 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-19 18:25:26,746 [INFO] infrastructure.embedding_service: Encoded 1 texts, shape=(1, 1024)
+2026-03-19 18:25:26,748 [INFO] core.retriever: Returning 1 results
+2026-03-19 18:25:28,663 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-19 18:25:28,663 [INFO] core.qa_service: Generated answer: 61 chars
+2026-03-19 18:25:28,663 [INFO] core.qa_service: Querying: 'What methods or techniques are used in this paper?', mode=specific
+2026-03-19 18:25:28,663 [INFO] core.retriever: Retrieving for query: 'What methods or techniques are used in this paper?', mode=specific, top_k=5
+2026-03-19 18:25:29,237 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-19 18:25:29,237 [INFO] infrastructure.embedding_service: Encoded 1 texts, shape=(1, 1024)
+2026-03-19 18:25:29,240 [INFO] core.retriever: Returning 1 results
+2026-03-19 18:25:35,049 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-19 18:25:35,050 [INFO] core.qa_service: Generated answer: 551 chars
+2026-03-19 18:25:35,050 [INFO] core.qa_service: Querying: 'What are the important concepts introduced in this paper?', mode=specific
+2026-03-19 18:25:35,050 [INFO] core.retriever: Retrieving for query: 'What are the important concepts introduced in this paper?', mode=specific, top_k=5
+2026-03-19 18:25:35,287 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-19 18:25:35,288 [INFO] infrastructure.embedding_service: Encoded 1 texts, shape=(1, 1024)
+2026-03-19 18:25:35,290 [INFO] core.retriever: Returning 1 results
+2026-03-19 18:25:39,078 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-19 18:25:39,079 [INFO] core.qa_service: Generated answer: 238 chars
+2026-03-19 18:25:39,079 [INFO] core.qa_service: Querying: 'What are the possible research directions for future work based on this paper?', mode=specific
+2026-03-19 18:25:39,079 [INFO] core.retriever: Retrieving for query: 'What are the possible research directions for future work based on this paper?', mode=specific, top_k=5
+2026-03-19 18:25:39,309 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-19 18:25:39,310 [INFO] infrastructure.embedding_service: Encoded 1 texts, shape=(1, 1024)
+2026-03-19 18:25:39,312 [INFO] core.retriever: Returning 1 results
+2026-03-19 18:25:44,606 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-19 18:25:44,607 [INFO] core.qa_service: Generated answer: 405 chars
+2026-03-19 18:25:44,607 [INFO] core.qa_service: Answered 5 questions
+2026-03-19 18:25:44,608 [INFO] __main__: Generated summary for: Embedding light dark matter and small neutrino mas...
+2026-03-19 18:25:44,608 [INFO] core.qa_service: Querying: 'What is the main problem this paper addresses?', mode=specific
+2026-03-19 18:25:44,608 [INFO] core.retriever: Retrieving for query: 'What is the main problem this paper addresses?', mode=specific, top_k=5
+2026-03-19 18:25:44,608 [INFO] openai._base_client: Retrying request to /embeddings in 0.446612 seconds
+2026-03-19 18:25:45,298 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-19 18:25:45,299 [INFO] infrastructure.embedding_service: Encoded 1 texts, shape=(1, 1024)
+2026-03-19 18:25:45,315 [INFO] core.retriever: Returning 1 results
+2026-03-19 18:25:45,316 [INFO] openai._base_client: Retrying request to /chat/completions in 0.492082 seconds
+2026-03-19 18:25:47,259 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-19 18:25:47,260 [INFO] core.qa_service: Generated answer: 73 chars
+2026-03-19 18:25:47,260 [INFO] core.qa_service: Querying: 'What are the key contributions of this paper?', mode=specific
+2026-03-19 18:25:47,260 [INFO] core.retriever: Retrieving for query: 'What are the key contributions of this paper?', mode=specific, top_k=5
+2026-03-19 18:25:47,682 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-19 18:25:47,683 [INFO] infrastructure.embedding_service: Encoded 1 texts, shape=(1, 1024)
+2026-03-19 18:25:47,685 [INFO] core.retriever: Returning 1 results
+2026-03-19 18:25:51,097 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-19 18:25:51,098 [INFO] core.qa_service: Generated answer: 217 chars
+2026-03-19 18:25:51,098 [INFO] core.qa_service: Querying: 'What methods or techniques are used in this paper?', mode=specific
+2026-03-19 18:25:51,098 [INFO] core.retriever: Retrieving for query: 'What methods or techniques are used in this paper?', mode=specific, top_k=5
+2026-03-19 18:25:51,322 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-19 18:25:51,322 [INFO] infrastructure.embedding_service: Encoded 1 texts, shape=(1, 1024)
+2026-03-19 18:25:51,325 [INFO] core.retriever: Returning 1 results
+2026-03-19 18:25:54,553 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-19 18:25:54,553 [INFO] core.qa_service: Generated answer: 193 chars
+2026-03-19 18:25:54,553 [INFO] core.qa_service: Querying: 'What are the important concepts introduced in this paper?', mode=specific
+2026-03-19 18:25:54,553 [INFO] core.retriever: Retrieving for query: 'What are the important concepts introduced in this paper?', mode=specific, top_k=5
+2026-03-19 18:25:54,788 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-19 18:25:54,788 [INFO] infrastructure.embedding_service: Encoded 1 texts, shape=(1, 1024)
+2026-03-19 18:25:54,791 [INFO] core.retriever: Returning 1 results
+2026-03-19 18:25:56,460 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-19 18:25:56,461 [INFO] core.qa_service: Generated answer: 37 chars
+2026-03-19 18:25:56,461 [INFO] core.qa_service: Querying: 'What are the possible research directions for future work based on this paper?', mode=specific
+2026-03-19 18:25:56,461 [INFO] core.retriever: Retrieving for query: 'What are the possible research directions for future work based on this paper?', mode=specific, top_k=5
+2026-03-19 18:25:57,212 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-19 18:25:57,213 [INFO] infrastructure.embedding_service: Encoded 1 texts, shape=(1, 1024)
+2026-03-19 18:25:57,215 [INFO] core.retriever: Returning 1 results
+2026-03-19 18:25:59,681 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-19 18:25:59,681 [INFO] core.qa_service: Generated answer: 115 chars
+2026-03-19 18:25:59,681 [INFO] core.qa_service: Answered 5 questions
+2026-03-19 18:25:59,681 [INFO] __main__: Generated summary for: Low Energy Phonon Bursts Created By Fast Neutron D...
+2026-03-19 18:25:59,681 [INFO] __main__: 
+[Step 8] Generating summary and knowledge logs...
+2026-03-19 18:25:59,682 [INFO] __main__: Logs generated successfully
+2026-03-19 18:25:59,682 [INFO] __main__: 
+[Step 9] Sending email notification...
+2026-03-19 18:25:59,682 [INFO] __main__: Email notifications disabled in config
+2026-03-19 18:25:59,682 [INFO] __main__: 
+[Step 9.5] Stopping infrastructure...
+2026-03-19 18:25:59,682 [INFO] services.deploy_service: Stopping vLLM models...
+2026-03-19 18:26:02,713 [INFO] services.deploy_service: Stopping Milvus container: iris-milvus
+2026-03-19 18:26:03,097 [INFO] services.deploy_service: Milvus container stopped
+2026-03-19 18:26:03,097 [INFO] services.deploy_service: Infrastructure stopped successfully
+2026-03-19 18:26:03,097 [INFO] __main__: Infrastructure stopped successfully
+2026-03-19 18:26:03,097 [INFO] __main__: 
 ============================================================
-2026-03-19 14:54:17,280 [INFO] __main__: IRIS Update Cycle Failed
-2026-03-19 14:54:17,280 [INFO] __main__: ============================================================
-/home/NagaiYoru/LLM_tuning/IRIS_search/scripts/run_update_cycle.py:494: RuntimeWarning: coroutine 'IndexService.chunk_and_index' was never awaited
-  success = await run_update_cycle(config)
-RuntimeWarning: Enable tracemalloc to get the object allocation traceback
-[0;31m[ERROR][0m Update cycle failed with exit code: 1
+2026-03-19 18:26:03,097 [INFO] __main__: IRIS Update Cycle Completed Successfully
+2026-03-19 18:26:03,097 [INFO] __main__: ============================================================
+2026-03-19 18:26:03,097 [INFO] __main__: Update folder: /home/NagaiYoru/research/IRIS_papers/update_2026_03_19_1825
+2026-03-19 18:26:03,097 [INFO] __main__: New papers: 2
+[0;32m[INFO][0m Update cycle completed successfully

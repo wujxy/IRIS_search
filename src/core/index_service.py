@@ -89,7 +89,7 @@ class IndexService:
             collection_name = self.milvus_service.collection_name
 
         self.milvus_service.create_collection(
-            dim=self.embedding_dim,
+            dim=self.milvus_service.embedding_dim,
             overwrite=overwrite,
             collection_name=collection_name
         )
@@ -218,7 +218,7 @@ class IndexService:
             return self.embedding_service.get_embedding_dim()
         except Exception:
             # Default dimension for Qwen3-Embedding-0.6B
-            return 768
+            return 1024
 
 
 def create_index_service_from_config(config: dict) -> IndexService:

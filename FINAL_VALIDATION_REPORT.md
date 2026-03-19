@@ -146,7 +146,7 @@
 milvus:
   uri: http://localhost:29901
   collection_name: iris_papers
-  embedding_dim: 768
+  embedding_dim: 1024
   enabled: true
 
 # Embedding 服务配置 (新服务使用)
@@ -206,12 +206,12 @@ from infrastructure.embedding_service import EmbeddingService
 milvus = MilvusService(
     uri='http://localhost:29901',
     collection_name='test_validation',
-    embedding_dim=768
+    embedding_dim=1024
 )
 
 # 插入测试数据
 import numpy as np
-test_embeddings = np.random.rand(5, 768).astype(np.float32)
+test_embeddings = np.random.rand(5, 1024).astype(np.float32)
 test_chunks = [
     {'id': f'test_{i}', 'contents': f'test content {i}'}
     for i in range(5)
@@ -274,7 +274,7 @@ from core.qa_service import QAService
 milvus = MilvusService(
     uri='http://localhost:29901',
     collection_name='test_validation',
-    embedding_dim=768
+    embedding_dim=1024
 )
 
 embedding_service = EmbeddingService(

@@ -400,9 +400,10 @@ def create_qa_service_from_config(config: dict) -> QAService:
 
     # QA configuration
     qa_config = config.get("qa", {})
-    # Extract model name from llm_model_path
+    # Extract model name from qa.model_name or llm_model_path
     llm_path = config.get("models", {}).get("llm_model_path", "")
-    model_name = Path(llm_path).name if llm_path else "llama-3-2-3b-instruct"
+    default_model_name = Path(llm_path).name if llm_path else "llama-3-2-3b-instruct"
+    model_name = qa_config.get("model_name", default_model_name)
 
     # Create QA service
     qa_service = QAService(

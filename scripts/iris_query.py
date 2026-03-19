@@ -500,7 +500,7 @@ Examples:
     milvus_service = MilvusService(
         uri=config["milvus"]["uri"],
         collection_name=collection_name,
-        embedding_dim=config["milvus"].get("embedding_dim", 768)
+        embedding_dim=config["milvus"].get("embedding_dim", 1024)
     )
 
     embedding_service = EmbeddingService(

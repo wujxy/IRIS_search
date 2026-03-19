@@ -89,7 +89,7 @@ class EmbeddingService:
             except Exception as e:
                 logger.error(f"Failed to encode batch {i}-{i+self.batch_size}: {e}")
                 # Fill with zeros on error
-                batch_embeddings = [np.zeros(768, dtype=np.float32) for _ in batch]
+                batch_embeddings = [np.zeros(1024, dtype=np.float32) for _ in batch]
                 embeddings.extend(batch_embeddings)
 
         result = np.array(embeddings, dtype=np.float32)

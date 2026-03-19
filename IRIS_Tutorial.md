@@ -272,7 +272,7 @@ milvus:
   uri: http://localhost:29901
   collection_name: iris_papers
   master_collection: iris_master  # 主集合名称（增量索引）
-  embedding_dim: 768  # Qwen3-Embedding-0.6B 的维度
+  embedding_dim: 1024  # Qwen3-Embedding-0.6B 的维度
   enabled: true
 ```
 
@@ -667,11 +667,11 @@ from infrastructure.milvus_service import MilvusService
 milvus = MilvusService(
     uri="http://localhost:29901",
     collection_name="iris_papers",
-    embedding_dim=768
+    embedding_dim=1024
 )
 
 # 创建集合
-milvus.create_collection(dim=768, overwrite=False)
+milvus.create_collection(dim=1024, overwrite=False)
 
 # 插入数据（带元数据）
 milvus.insert(embeddings, chunks)

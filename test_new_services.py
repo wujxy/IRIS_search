@@ -69,16 +69,16 @@ def test_milvus_service():
         milvus = MilvusService(
             uri="http://localhost:29901",
             collection_name="test_collection",
-            embedding_dim=768,
+            embedding_dim=1024,
         )
 
         # Test creating collection
         print("Creating test collection...")
-        milvus.create_collection(dim=768, overwrite=True)
+        milvus.create_collection(dim=1024, overwrite=True)
 
         # Test inserting data
         import numpy as np
-        test_embeddings = np.random.rand(5, 768).astype(np.float32)
+        test_embeddings = np.random.rand(5, 1024).astype(np.float32)
         test_chunks = [
             {"id": f"chunk_{i}", "contents": f"Test content {i}"}
             for i in range(5)
@@ -191,7 +191,7 @@ def test_retriever():
         milvus_service = MilvusService(
             uri="http://localhost:29901",
             collection_name="test_retriever",
-            embedding_dim=768
+            embedding_dim=1024
         )
 
         embedding_service = EmbeddingService(
@@ -237,7 +237,7 @@ async def test_qa_service():
         milvus_service = MilvusService(
             uri="http://localhost:29901",
             collection_name="test_qa",
-            embedding_dim=768
+            embedding_dim=1024
         )
 
         embedding_service = EmbeddingService(
@@ -335,7 +335,7 @@ def test_specific_mode():
             "embedding_model_name": "qwen3-embedding-0.6b",
             "milvus_uri": "http://localhost:29901",
             "milvus_collection_name": "test_specific",
-            "milvus_embedding_dim": 768,
+            "milvus_embedding_dim": 1024,
             "reranker_model_path": None,
             "top_k": 3,
         }

@@ -32,7 +32,7 @@ class MilvusService:
         uri: str,
         collection_name: str,
         token: Optional[str] = None,
-        embedding_dim: int = 768,
+        embedding_dim: int = 1024,
         id_field: str = ID_FIELD,
         vector_field: str = VECTOR_FIELD,
         text_field: str = TEXT_FIELD,
@@ -44,7 +44,7 @@ class MilvusService:
             uri: Milvus server URI (e.g., "http://localhost:29901")
             collection_name: Collection name
             token: Optional authentication token
-            embedding_dim: Vector dimension (default: 768 for Qwen3-Embedding-0.6B)
+            embedding_dim: Vector dimension (default: 1024 for Qwen3-Embedding-0.6B)
             id_field: ID field name (default: "id")
             vector_field: Vector field name (default: "vector")
             text_field: Text field name (default: "contents")
@@ -321,17 +321,69 @@ class MilvusService:
             logger.error(f"Search failed on '{collection_name}': {exc}")
             raise RuntimeError(f"Milvus search failed: {exc}") from exc
 
-        # Process results
+        # Process results - handle different pymilvus return formats
         results = []
-        for hits in res:
-            # Get entity data
-            entity = hit.get("entity", {})
-            # Combine entity with distance/score
-            result = {**entity}
-            # Also check direct hit fields
-            for key in ["id", "distance", "score"]:
-                if key in hit and key not in result:
-                    result[key] = hit[key]
+
+        # Extract results from different possible pymilvus return formats
+        raw_results = []
+        if isinstance(res, list):
+            # Direct list format (pymilvus 2.3.x+)
+            raw_results = res
+        elif isinstance(res, dict) and 'data' in res:
+            # Dict with 'data' key format (pymilvus 2.4.x+)
+            raw_results = res.get('data', [])
+        elif isinstance(res, dict) and 'hits' in res:
+            # HybridSearchResult format with hits
+            raw_results = res.get('hits', [])
+        elif isinstance(res, dict) and 'results' in res:
+            # Alternative dict format
+            raw_results = res.get('results', [])
+        elif hasattr(res, '__iter__'):
+            # Directly iterable
+            raw_results = list(res)
+        else:
+            logger.warning(f"Unexpected search result type: {type(res)}")
+            raw_results = []
+
+        for hit in raw_results:
+            # Handle both dict hits and pymilvus H class objects
+            if isinstance(hit, dict):
+                # Standard dictionary hit
+                entity = hit
+                result = {**entity}
+                # Check for standard fields directly in hit
+                for key in ["id", "distance", "score"]:
+                    if key in hit and key not in result:
+                        result[key] = hit[key]
+            elif hasattr(hit, '_dict_'):
+                # pymilvus H class object
+                entity = hit._dict_
+                result = {**entity}
+                # Try to extract common fields from H class
+                for key in ["id", "distance", "score"]:
+                    if hasattr(hit, key):
+                        result[key] = getattr(hit, key, None)
+            elif hasattr(hit, '__dict__'):
+                # Alternative pymilvus H class object
+                entity = hit.__dict__
+                result = {**entity}
+                # Try to extract common fields
+                for key in ["id", "distance", "score"]:
+                    if hasattr(hit, key):
+                        result[key] = getattr(hit, key, None)
+            else:
+                # Unknown hit type, try minimal extraction
+                logger.debug(f"Unknown hit type: {type(hit)}, skipping")
+                continue
+
+            # Ensure required fields exist
+            if 'id' not in result:
+                result['id'] = entity.get('id', '')
+            if 'distance' not in result:
+                result['distance'] = entity.get('distance', 0.0)
+            if 'score' not in result:
+                result['score'] = entity.get('score', 0.0)
+
             results.append(result)
 
         logger.debug(f"Retrieved {len(results)} results from '{collection_name}'")

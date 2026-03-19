@@ -195,10 +195,10 @@ class VllmControl:
             else:
                 self.host = "127.0.0.1"
                 self.port = 65504
-            # Extract model name from llm_model_path
+            # Extract model name from qa.model_name or llm_model_path
             llm_path = config["models"]["llm_model_path"]
-            self.model_name = Path(llm_path).name
-            self.served_model_name = Path(llm_path).name
+            self.model_name = qa_config.get("model_name", Path(llm_path).name)
+            self.served_model_name = qa_config.get("model_name", Path(llm_path).name)
             self.max_model_len = qa_config.get("max_model_len", 8192)
             self.gpu_memory_utilization = qa_config.get("gpu_memory_utilization", 0.85)
             self.tensor_parallel_size = qa_config.get("tensor_parallel_size", 1)

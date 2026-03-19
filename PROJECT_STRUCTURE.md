@@ -86,7 +86,7 @@ core/ (上层)
 milvus:
   uri: http://localhost:29901
   collection_name: iris_papers
-  embedding_dim: 768
+  embedding_dim: 1024
 
 embedding:
   base_url: http://127.0.0.1:65503/v1

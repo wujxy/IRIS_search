@@ -54,7 +54,7 @@ Edit `configs/config.yaml` to configure new services:
 milvus:
   uri: http://localhost:29901
   collection_name: iris_papers
-  embedding_dim: 768
+  embedding_dim: 1024
 
 embedding:
   base_url: http://127.0.0.1:65503/v1
@@ -242,8 +242,8 @@ Test each component separately:
 # Test Milvus
 python -c "
 from infrastructure.milvus_service import MilvusService
-m = MilvusService('http://localhost:29901', 'test', 768)
-m.create_collection(768, True)
+m = MilvusService('http://localhost:29901', 'test', 1024)
+m.create_collection(1024, True)
 print('Milvus OK')
 "
 
