@@ -113,7 +113,7 @@ class PaperService:
                         entry_id, paper_id, title, authors, published, updated,
                         summary, comment, journal_ref, doi, primary_category,
                         categories, status, download_status, pdf_url, pdf_path, update_folder
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
                     entry_id,
                     paper_id,

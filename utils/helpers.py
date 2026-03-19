@@ -276,3 +276,19 @@ def get_latest_update_folder(database_root: str) -> Optional[Path]:
         return update_folders[0]
 
     return None
+
+
+def get_master_chunks_path(database_root: str) -> Path:
+    """
+    Get path to master chunks.jsonl file.
+
+    Args:
+        database_root: Path to IRIS database root
+
+    Returns:
+        Path to master chunks.jsonl
+    """
+    database_root = Path(database_root)
+    master_storage = database_root / "master_index_storage"
+    master_storage.mkdir(parents=True, exist_ok=True)
+    return master_storage / "chunks.jsonl"

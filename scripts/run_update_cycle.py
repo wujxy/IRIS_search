@@ -9,17 +9,25 @@ Usage:
 """
 
 import argparse
+import asyncio
 import logging
 import sys
 from datetime import datetime
 from pathlib import Path
 
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Add parent directory and src to path for imports
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+sys.path.insert(1, str(project_root / "src"))
 
+from infrastructure.milvus_service import MilvusService
+from infrastructure.embedding_service import EmbeddingService
+from infrastructure.reranker_service import RerankerService
+from infrastructure.document_processor import DocumentProcessor
+from core.retriever import create_retriever_from_config, Retriever
+from core.index_service import create_index_service_from_config, IndexService
+from core.qa_service import create_qa_service_from_config, QAService
 from services.arxiv_service import ArxivService
-from services.index_service import IndexService
-from services.qa_service import QAService
 from services.email_service import EmailService
 from services.deploy_service import DeployService
 from utils.helpers import (
@@ -248,86 +256,69 @@ def run_update_cycle(config: dict):
         # Step 6: Build index if there are new papers
         papers_with_answers = []
         if new_papers:
-            logger.info("\n[Step 6] Building index with UltraRAG...")
+            logger.info("\n[Step 6] Building index with new services...")
 
-            # 生成批次命名的 collection_name
-            collection_name = f"update_{datetime.now().strftime('%Y_%m_%d_%H%M')}"
+            # 使用主集合进行增量索引
+            collection_name = config["milvus"]["collection_name"]
 
-            index_service = IndexService(
-                ultrarag_path=config["ultrarag"]["ultrarag_path"],
-                embedding_model=config["models"]["embedding_model_path"],
-                collection_name=collection_name
-            )
+            index_service = create_index_service_from_config(config)
 
             index_output_dir = update_folder / "index_storage"
 
             # overwrite=false 用于 Milvus 增量更新
-            success = index_service.chunk_and_index(
+            success = asyncio.run(index_service.chunk_and_index(
                 pdf_dir=pdf_dir,
                 output_dir=index_output_dir,
                 collection_name=collection_name,
                 overwrite=False
-            )
+            ))
 
             if success:
-                index_info = index_service.get_index_info(index_output_dir)
-                logger.info(f"Index created: {index_info['chunk_count']} chunks")
+                logger.info(f"Index created successfully")
 
                 # Step 7: QA 处理（vLLM 模型已在 Step 5 中同时启动）
                 logger.info("\n[Step 7] QA processing...")
-                # vLLM 模型（索引和 QA）已在 Step 5 中同时启动
-                qa_service = QAService(
-                    ultrarag_path=config["ultrarag"]["ultrarag_path"],
-                    embedding_model=config["models"]["embedding_model_path"],
-                    reranker_model=config["models"]["reranker_model_path"],
-                    generation_model=config["models"]["llm_model_path"],
-                    vllm_base_url=config["models"]["vllm"]["base_url"],
-                    index_vllm_base_url=config["models"]["vllm"]["index"]["base_url"],
-                    served_model_name=config["models"]["vllm"]["served_model_name"],
-                    system_prompt=config["qa"]["system_prompt"],
-                    collection_name=collection_name
-                )
+                qa_service = create_qa_service_from_config(config)
 
                 # Load questions
                 questions = load_questions(config["qa"]["question_set_path"])
 
                 # QA for each paper (using first 5 questions for summarization)
-                chunks_path = Path(index_info["chunks_file"])
-                index_path = Path(index_info["index_file"]) if index_info["index_file"] else None
+                # 使用 specific 模式按 paper_id 过滤
+                for paper in new_papers:
+                    paper_questions = questions[:5]  # Use first 5 questions
+                    # 提取 arXiv ID 作为 paper_id
+                    paper_id = paper["entry_id"].split('/')[-1]
 
-                if chunks_path.exists():
-                    for paper in new_papers:
-                        paper_questions = questions[:5]  # Use first 5 questions
-                        answers = qa_service.query_knowledge_base_batch(
-                            questions=paper_questions,
-                            chunks_path=chunks_path,
-                            collection_name=collection_name
-                        )
+                    answers = asyncio.run(qa_service.query_knowledge_base_with_mode(
+                        questions=paper_questions,
+                        mode="specific",
+                        paper_id=paper_id
+                    ))
 
-                        # Map answers to question keys
-                        answers_dict = {}
-                        for idx, ans in enumerate(answers):
-                            answers_dict[f"q{idx+1}"] = ans.get("answer", "")
+                    # Map answers to question keys
+                    answers_dict = {}
+                    for idx, ans in enumerate(answers):
+                        answers_dict[f"q{idx+1}"] = ans.get("answer", "")
 
-                        papers_with_answers.append({
-                            "paper": paper,
-                            "answers": answers_dict
-                        })
-                        logger.info(f"Generated summary for: {paper['title'][:50]}...")
+                    papers_with_answers.append({
+                        "paper": paper,
+                        "answers": answers_dict
+                    })
+                    logger.info(f"Generated summary for: {paper['title'][:50]}...")
 
-                        # Step 8: Generate summary and knowledge logs
-                        logger.info("\n[Step 8] Generating summary and knowledge logs...")
-                        summary_md = generate_summary_markdown(papers_with_answers)
-                        knowledge_md = generate_knowledge_markdown(papers_with_answers)
+                # Step 8: Generate summary and knowledge logs
+                if papers_with_answers:
+                    logger.info("\n[Step 8] Generating summary and knowledge logs...")
+                    summary_md = generate_summary_markdown(papers_with_answers)
+                    knowledge_md = generate_knowledge_markdown(papers_with_answers)
 
-                        save_summary_log(update_folder, summary_md)
-                        save_knowledge_log(update_folder, knowledge_md)
+                    save_summary_log(update_folder, summary_md)
+                    save_knowledge_log(update_folder, knowledge_md)
 
-                        logger.info("Logs generated successfully")
-                    else:
-                        logger.warning("Index files not found, skipping QA")
+                    logger.info("Logs generated successfully")
                 else:
-                    logger.warning("vLLM service not available, skipping QA")
+                    logger.warning("No papers with answers, skipping log generation")
             else:
                 logger.error("Index build failed, skipping QA")
         else:

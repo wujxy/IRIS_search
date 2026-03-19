@@ -13,7 +13,7 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Python environment
-PYTHON_ENV="/home/NagaiYoru/LLM_tuning/llm_env/bin/python"
+PYTHON_ENV=".venv/bin/python"
 
 # Default options
 DAEMON_MODE=false

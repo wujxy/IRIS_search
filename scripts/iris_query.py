@@ -11,29 +11,38 @@ Usage:
 """
 
 import argparse
+import asyncio
 import logging
 import sys
 from pathlib import Path
 
-# Add parent directory to path for imports
+# Add project root to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
+# Add src to path for new structure
+sys.path.insert(1, str(Path(__file__).parent.parent / "src"))
 
-from utils.helpers import load_config, setup_logging, get_latest_update_folder
-from services.qa_service import QAService
+from utils.helpers import load_config, setup_logging, get_latest_update_folder, get_master_chunks_path
 from services.deploy_service import DeployService
 from services.paper_service import PaperService
+
+# New independent services
+from infrastructure.milvus_service import MilvusService
+from infrastructure.embedding_service import EmbeddingService
+from core.retriever import Retriever
+from core.qa_service import QAService
 
 
 logger = logging.getLogger(__name__)
 
 
-def find_chunks_file(database_root: str, update_folder: str = None):
+def find_chunks_file(database_root: str, update_folder: str = None, use_master: bool = True):
     """
     Find chunks file from the IRIS database.
 
     Args:
         database_root: Path to IRIS database root
         update_folder: Specific update folder to use (optional)
+        use_master: Use master collection chunks by default (optional, default: True)
 
     Returns:
         Path to chunks.jsonl file, or None if not found
@@ -41,20 +50,24 @@ def find_chunks_file(database_root: str, update_folder: str = None):
     database_root = Path(database_root)
 
     if update_folder:
+        # Backward compatibility: use update folder if specified
         folder_path = database_root / update_folder
+        index_storage = folder_path / "index_storage"
+        chunks_file = index_storage / "chunks.jsonl"
+    elif use_master:
+        # Default: use master collection chunks
+        chunks_file = get_master_chunks_path(database_root)
+        logger.info(f"Using master collection chunks: {chunks_file}")
     else:
+        # Legacy: use latest update folder
         folder_path = get_latest_update_folder(database_root)
-
-    if folder_path is None:
-        logger.error("No update folders found in database")
-        logger.info(f"Database root: {database_root}")
-        return None
-
-    logger.info(f"Using update folder: {folder_path}")
-
-    # Try to find index_storage in update folder
-    index_storage = folder_path / "index_storage"
-    chunks_file = index_storage / "chunks.jsonl"
+        if folder_path is None:
+            logger.error("No update folders found in database")
+            logger.info(f"Database root: {database_root}")
+            return None
+        logger.info(f"Using update folder: {folder_path}")
+        index_storage = folder_path / "index_storage"
+        chunks_file = index_storage / "chunks.jsonl"
 
     if not chunks_file.exists():
         logger.error(f"Chunks file not found: {chunks_file}")
@@ -91,7 +104,7 @@ def list_papers_mode(paper_service: PaperService, limit: int = 20, category: str
         return
 
     # Display papers
-    print(f"\n{'ID':<12} {'Date':<12} {'Category':<15} {'Title':<30}")
+    print(f"\n{ID:<12} {Date:<12} {Category:<15} {Title:<30}")
     print("-" * 80)
 
     for paper in papers:
@@ -108,14 +121,12 @@ def list_papers_mode(paper_service: PaperService, limit: int = 20, category: str
     print("Use --help for more options")
 
 
-def single_query_mode(
+async def single_query_mode(
     qa_service: QAService,
     paper_service: PaperService,
-    chunks_path: Path,
     question: str,
     mode: str = "global",
-    paper_id: str = None,
-    collection_name: str = "iris_papers"
+    paper_id: str = None
 ):
     """
     Run a single query with specified mode.
@@ -123,11 +134,9 @@ def single_query_mode(
     Args:
         qa_service: QA service instance
         paper_service: Paper service instance
-        chunks_path: Path to chunks file
         question: Question to ask
         mode: Query mode (global/specific)
         paper_id: Paper ID for specific mode
-        collection_name: Milvus collection name
     """
     print(f"\nQuestion: {question}")
     print("-" * 60)
@@ -148,20 +157,14 @@ def single_query_mode(
 
         print(f"Querying specific paper: {paper.get('title', 'N/A')}")
 
-    # Query knowledge base
-    if mode == "specific":
-        answer = qa_service.query_knowledge_base_with_mode(
-            question=question,
-            chunks_path=chunks_path,
-            mode="specific",
-            paper_id=paper_id,
-            collection_name=collection_name
-        )
-    else:
-        answer = qa_service.query_knowledge_base(
-            question=question,
-            chunks_path=chunks_path
-        )
+    # Query knowledge base (new async interface)
+    answer = await qa_service.query(
+        question=question,
+        chunks_path=None,  # No longer used
+        mode=mode,
+        paper_id=paper_id,
+        top_k=5
+    )
 
     if answer:
         print(f"\nAnswer:\n{answer}\n")
@@ -169,12 +172,10 @@ def single_query_mode(
         print("\nNo answer found. Please try rephrasing your question.\n")
 
 
-def interactive_mode(
+async def interactive_mode(
     qa_service: QAService,
     paper_service: PaperService,
-    chunks_path: Path,
-    default_mode: str = "global",
-    collection_name: str = "iris_papers"
+    default_mode: str = "global"
 ):
     """
     Run interactive query mode with mode switching.
@@ -265,17 +266,20 @@ def interactive_mode(
                 if not current_paper_id:
                     print("\nError: Please set a paper using /paper <id>")
                     continue
-                answer = qa_service.query_knowledge_base_with_mode(
+                answer = await qa_service.query(
                     question=question,
-                    chunks_path=chunks_path,
+                    chunks_path=None,
                     mode="specific",
                     paper_id=current_paper_id,
-                    collection_name=collection_name
+                    top_k=5
                 )
             else:
-                answer = qa_service.query_knowledge_base(
+                answer = await qa_service.query(
                     question=question,
-                    chunks_path=chunks_path
+                    chunks_path=None,
+                    mode="global",
+                    paper_id=None,
+                    top_k=5
                 )
 
             if answer:
@@ -291,7 +295,7 @@ def interactive_mode(
             print(f"\nError: {e}\n")
 
 
-def main():
+async def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
         description="IRIS Query Interface - Ask questions about literature",
@@ -355,8 +359,8 @@ Examples:
     parser.add_argument(
         "--collection",
         type=str,
-        default="iris_papers",
-        help="Milvus collection name"
+        default=None,
+        help="Milvus collection name (default: uses master_collection from config)"
     )
     parser.add_argument(
         "--start-infra",
@@ -488,67 +492,98 @@ Examples:
         logger.error("Could not find chunks file")
         sys.exit(1)
 
-    # Initialize QA service
-    qa_service = QAService(
-        ultrarag_path=config["ultrarag"]["ultrarag_path"],
-        embedding_model=config["models"]["embedding_model_path"],
-        reranker_model=config["models"]["reranker_model_path"],
-        generation_model=config["models"]["llm_model_path"],
-        vllm_base_url=config["models"]["vllm"]["base_url"],
-        index_vllm_base_url=config["models"]["vllm"]["index"]["base_url"],
-        served_model_name=config["models"]["vllm"]["served_model_name"],
-        collection_name=args.collection
+    # Get collection name - use master collection from config if not specified
+    collection_name = args.collection or config["milvus"]["master_collection"]
+    logger.info(f"Using collection: {collection_name}")
+
+    # Initialize new independent services
+    milvus_service = MilvusService(
+        uri=config["milvus"]["uri"],
+        collection_name=collection_name,
+        embedding_dim=config["milvus"].get("embedding_dim", 768)
     )
 
-    # Check vLLM service
-    if args.start_infra:
-        # 独立运行时启动基础设施（Milvus + vLLM 索引模型 + vLLM QA 模型）
-        logger.info("Starting infrastructure...")
-        deploy_server = DeployService(config)
+    embedding_service = EmbeddingService(
+        base_url=config["embedding"]["base_url"],
+        model_name=config["embedding"]["model_name"],
+        batch_size=config["embedding"].get("batch_size", 32)
+    )
+
+    # Optional reranker
+    reranker_service = None
+    if config.get("reranker", {}).get("enabled", False):
+        reranker_service = RerankerService(
+            model_path=config["reranker"]["model_path"],
+            batch_size=config["reranker"].get("batch_size", 16),
+            device=config["reranker"].get("device", "cpu")
+        )
+
+    # Create retriever
+    retriever = Retriever(
+        embedding_service=embedding_service,
+        milvus_service=milvus_service,
+        reranker_service=reranker_service,
+        default_top_k=config["qa"].get("top_k", 5)
+    )
+
+    # Initialize QA service
+    qa_service = QAService(
+        retriever=retriever,
+        generation_base_url=config["models"]["vllm"]["base_url"],
+        generation_model=config["models"]["vllm"]["served_model_name"],
+        system_prompt=config["qa"]["system_prompt"],
+        temperature=config["qa"].get("temperature", 0.7),
+        max_tokens=config["qa"].get("max_tokens", 2048)
+    )
+
+    # Infrastructure management
+    deploy_server = DeployService(config)
+    infrastructure_auto_started = False
+
+    # Check infrastructure status
+    milvus_running = deploy_server.milvus_control.search()
+    index_vllm_running = deploy_server.index_vllm.search(timeout=5)
+    qa_vllm_running = deploy_server.qa_vllm.search(timeout=5)
+
+    logger.info(f"Infrastructure status: Milvus={milvus_running}, Index vLLM={index_vllm_running}, QA vLLM={qa_vllm_running}")
+
+    # Start infrastructure if needed or requested
+    if args.start_infra or not (milvus_running and index_vllm_running and qa_vllm_running):
+        if not (milvus_running and index_vllm_running and qa_vllm_running):
+            logger.info("Infrastructure not fully running, starting...")
+        else:
+            logger.info("Starting infrastructure as requested...")
 
         if not deploy_server.start_infrastructure():
             logger.error("Failed to start infrastructure")
             sys.exit(1)
+        infrastructure_auto_started = True
 
-        try:
-            # Run query
-            if args.interactive:
-                interactive_mode(qa_service, paper_service, chunks_path,
-                              default_mode=args.mode, collection_name=args.collection)
-            elif args.question:
-                single_query_mode(qa_service, paper_service, chunks_path, args.question,
-                                  mode=args.mode, paper_id=args.paper_id,
-                                  collection_name=args.collection)
-            else:
-                print("Error: Please provide a question or use --interactive mode.")
-                sys.exit(1)
-        finally:
-            # Stop infrastructure when done
-            logger.info("Stopping infrastructure...")
-            deploy_server.stop_infrastructure()
+    try:
+        # Run query
+        if args.interactive:
+            await interactive_mode(
+                qa_service=qa_service,
+                paper_service=paper_service,
+                default_mode=args.mode
+            )
+        elif args.question:
+            await single_query_mode(
+                qa_service=qa_service,
+                paper_service=paper_service,
+                question=args.question,
+                mode=args.mode,
+                paper_id=args.paper_id
+            )
+        else:
+            print("Error: Please provide a question or use --interactive mode.")
             return
-
-    # If not starting infrastructure, check if services are available
-    if not args.start_infra:
-        logger.info("Not starting infrastructure - assuming services are already running")
-
-    # Interactive mode
-    if args.interactive:
-        interactive_mode(qa_service, paper_service, chunks_path,
-                      default_mode=args.mode, collection_name=args.collection)
-
-    # Single query mode
-    elif args.question:
-        single_query_mode(qa_service, paper_service, chunks_path, args.question,
-                          mode=args.mode, paper_id=args.paper_id,
-                          collection_name=args.collection)
-
-    else:
-        # No question and not interactive - show help
-        print("Error: Please provide a question, use --list-papers, or use --interactive mode.")
-        print("\nUse --help for usage information.")
-        sys.exit(1)
+    finally:
+        # Stop infrastructure if auto-started
+        if infrastructure_auto_started:
+            logger.info("Stopping auto-started infrastructure...")
+            deploy_server.stop_infrastructure()
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

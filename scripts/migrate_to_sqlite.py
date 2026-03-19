@@ -9,8 +9,10 @@ import logging
 import sys
 from pathlib import Path
 
-# Add parent directory to path for imports
+# Add project root to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
+# Add src to path for new structure
+sys.path.insert(1, str(Path(__file__).parent.parent / "src"))
 
 from utils.helpers import load_config, setup_logging
 from services.paper_service import PaperService

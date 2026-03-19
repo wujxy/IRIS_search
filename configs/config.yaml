@@ -1,6 +1,10 @@
 # IRIS Configuration File
 # Intelligent Research Information System [IRIS]
 
+# ============================================================
+# IRIS Configuration
+# ============================================================
+
 update:
   interval_hours: 1  # How often to search for new papers
 
@@ -29,65 +33,65 @@ storage:
   #   ├── metadata.json
   #   └── update_log.md
 
-ultrarag:
-  ultrarag_path: /home/NagaiYoru/LLM_tuning/UltraRAG
-  index_backend: milvus  # database type
-  index_storage: /home/NagaiYoru/research/IRIS_papers/index_storage
-  # UltraRAG pipeline configurations
-  pipelines:
-    index_watch: piplines/offline_build_index.yaml
-    qa_batch: piplines/online_rag_qa.yaml
+# Model paths
+models:
+  embedding_model_path: /home/NagaiYoru/LLM_model/Qwen3-Embedding-0.6B
+  reranker_model_path: /home/NagaiYoru/LLM_model/bge-reranker-v2-m3
+  llm_model_path: /home/NagaiYoru/LLM_model/Llama-3.2-3B-Instruct
 
+# Milvus configuration
 milvus:
+  uri: http://localhost:29901
+  collection_name: iris_papers
+  master_collection: iris_papers_master
+  embedding_dim: 768  # Qwen3-Embedding-0.6B vector dimension
   enabled: true
   container_name: iris-milvus
   data_dir: /home/NagaiYoru/research/IRIS_papers/iris-milvus
   grpc_port: 29901
   http_port: 29902
   image: milvusdb/milvus:latest
-  uri: http://localhost:29901
   token: null
 
-models:
-  # Embedding model for vector indexing
-  embedding_model_path: /home/NagaiYoru/LLM_model/Qwen3-Embedding-0.6B
+# Embedding service configuration
+embedding:
+  base_url: http://127.0.0.1:65503/v1
+  model_name: qwen3-embedding-0.6b
+  batch_size: 32
+  enabled: true
 
-  # Reranker model for search results
-  reranker_model_path: /home/NagaiYoru/LLM_model/MiniCPM-Reranker-Light
+# Reranker service configuration
+reranker:
+  model_path: /home/NagaiYoru/LLM_model/bge-reranker-v2-m3
+  batch_size: 16
+  device: cpu  # Or "cuda:0" for GPU
+  enabled: false  # Set to true to enable reranking
 
-  # Generation model for QA and summarization
-  llm_model_path: /home/NagaiYoru/LLM_model/Llama-3.2-3B-Instruct
+# Document processing configuration
+document:
+  chunk_size: 512
+  chunk_overlap: 50
+  use_title: true
+  chunk_backend: sentence  # Options: token, sentence, recursive
 
-  # vLLM service configuration
-  vllm:
-    # QA model configuration
-    base_url: http://127.0.0.1:65504/v1
-    host: 127.0.0.1
-    port: 65504
-    served_model_name: llama3-3b-instruct
-    max_model_len: 8192
-    gpu_memory_utilization: 0.85
-    tensor_parallel_size: 1
-    enforce_eager: true
+# Retrieval configuration
+retrieval:
+  top_k: 5
+  rerank_multiplier: 3  # Retrieve top_k * this many, then rerank to top_k
 
-    # Index model configuration (vLLM-mounted embedding model)
-    index:
-      model_name: qwen3-embedding-0.6b
-      host: 127.0.0.1
-      port: 65503
-      base_url: http://127.0.0.1:65503/v1
-      max_model_len: 4096
-      gpu_memory_utilization: 0.15
-      tensor_parallel_size: 1
-      served_model_name: qwen3-embedding-0.6b
-
+# QA generation configuration
 qa:
   question_set_path: ./configs/questions.txt
-  # QA generation parameters
+  system_prompt: "你是一个专业的文献库搜索总结智能助手。请基于提供的英文文献，忽略参考文献，使用中文回答问题，要求足够专业。"
   temperature: 0.7
   top_p: 0.8
   max_tokens: 2048
-  system_prompt: "你是一个专业的文献库搜索总结智能助手。请基于提供的英文文献，使用中文回答问题，要求足够专业"
+  # vLLM QA model configuration
+  base_url: http://127.0.0.1:65504/v1
+  max_model_len: 8192
+  gpu_memory_utilization: 0.85
+  tensor_parallel_size: 1
+  enforce_eager: true
 
 email:
   enabled: false  # Set to true to enable email notifications
@@ -96,11 +100,9 @@ email:
   smtp_port: 587
   password: your_app_password  # Use app-specific password for Gmail
   receiver: your_email@gmail.com
-  # Email subject prefix
   subject_prefix: "[IRIS] "
 
 filtering:
-  # Filter out review papers
   exclude_reviews: true
   review_keywords:
     - review
@@ -109,7 +111,6 @@ filtering:
 
 duplicate_detection:
   enabled: true
-  # Check entry_id against all previous updates
 
 logging:
   level: INFO  # Options: DEBUG, INFO, WARNING, ERROR

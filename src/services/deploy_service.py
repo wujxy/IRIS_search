@@ -93,7 +93,7 @@ class MilvusControl:
             cmd = ["docker", "start", self.container_name]
         else:
             # Container doesn't exist, create new one
-            logger.warn(f"Container does not exist, Creating new container")
+            logger.warning(f"Container does not exist, Creating new container")
             cmd = [
                 "docker", "run", "-d",
                 "--name", self.container_name,
@@ -158,36 +158,62 @@ class VllmControl:
         self.model_type = model_type
 
         if model_type == "index":
-            self.model_name = config["models"]["vllm"]["index"]["model_name"]
-            self.host = config["models"]["vllm"]["index"]["host"]
-            self.port = config["models"]["vllm"]["index"]["port"]
-            self.base_url = config["models"]["vllm"]["index"]["base_url"]
-            self.served_model_name = config["models"]["vllm"]["index"]["served_model_name"]
-            self.max_model_len = config["models"]["vllm"]["index"]["max_model_len"]
-            self.gpu_memory_utilization = config["models"]["vllm"]["index"]["gpu_memory_utilization"]
+            # Use embedding configuration for index model
+            self.model_name = config["embedding"]["model_name"]
+            # Parse host and port from base_url
+            base_url = config["embedding"]["base_url"]
+            if "://" in base_url:
+                url_part = base_url.split("://")[1].split("/")[0]
+                if ":" in url_part:
+                    self.host = url_part.split(":")[0]
+                    self.port = int(url_part.split(":")[1])
+                else:
+                    self.host = url_part
+                    self.port = 65503
+            else:
+                self.host = "127.0.0.1"
+                self.port = 65503
+            self.base_url = base_url
+            self.served_model_name = config["embedding"]["model_name"]
+            self.max_model_len = 4096
+            self.gpu_memory_utilization = 0.15
             self.tensor_parallel_size = 1
+            self.enforce_eager = True
         else:  # qa
-            self.model_name = config["models"]["vllm"]["served_model_name"]
-            self.host = config["models"]["vllm"]["host"]
-            self.port = config["models"]["vllm"]["port"]
-            self.base_url = config["models"]["vllm"]["base_url"]
-            self.served_model_name = config["models"]["vllm"]["served_model_name"]
-            self.max_model_len = config["models"]["vllm"]["max_model_len"]
-            self.gpu_memory_utilization = config["models"]["vllm"]["gpu_memory_utilization"]
-            self.tensor_parallel_size = config["models"]["vllm"]["tensor_parallel_size"]
+            # Use qa.base_url configuration for qa model
+            qa_config = config.get("qa", {})
+            self.base_url = qa_config.get("base_url", "http://127.0.0.1:65504/v1")
+            # Parse host and port from base_url
+            if "://" in self.base_url:
+                url_part = self.base_url.split("://")[1].split("/")[0]
+                if ":" in url_part:
+                    self.host = url_part.split(":")[0]
+                    self.port = int(url_part.split(":")[1])
+                else:
+                    self.host = url_part
+                    self.port = 65504
+            else:
+                self.host = "127.0.0.1"
+                self.port = 65504
+            # Extract model name from llm_model_path
+            llm_path = config["models"]["llm_model_path"]
+            self.model_name = Path(llm_path).name
+            self.served_model_name = Path(llm_path).name
+            self.max_model_len = qa_config.get("max_model_len", 8192)
+            self.gpu_memory_utilization = qa_config.get("gpu_memory_utilization", 0.85)
+            self.tensor_parallel_size = qa_config.get("tensor_parallel_size", 1)
+            self.enforce_eager = qa_config.get("enforce_eager", True)
 
-        self.enforce_eager = config["models"]["vllm"].get("enforce_eager", True)
-
-        # Model path
-        self.ultrarag_path = Path(config["ultrarag"]["ultrarag_path"])
+        # Model path (no longer using UltraRAG)
         if model_type == "index":
             self.model_path = config["models"]["embedding_model_path"]
         else:
             self.model_path = config["models"]["llm_model_path"]
+        self.ultrarag_path = None
 
         # Process management
         self.process = None
-        self.venv_python = self.ultrarag_path / ".venv" / "bin" / "python"
+        self.venv_python = "python"  # Use system python, not UltraRAG venv
 
         logger.info(f"VllmControl initialized for {model_type} model")
 

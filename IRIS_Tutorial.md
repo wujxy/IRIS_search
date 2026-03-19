@@ -1,4 +1,5 @@
 # IRIS - 智能文献信息系统教程
+# 独立于 UltraRAG 框架
 
 ## 目录
 
@@ -17,15 +18,16 @@
 
 ### 1.1 IRIS 是什么？
 
-IRIS (Intelligent Research Information System) 是一个自动化的人工智能文献监控和知识提取系统。它能够：
+IRIS (Intelligent Research Information System) 是一个自动化的人工智能文献监控和知识提取系统，**完全独立于 UltraRAG 框架**。它能够：
 
 - **自动搜索 arXiv** - 根据关键词定期搜索最新学术论文
 - **智能下载** - 自动下载新论文的 PDF 文件
-- **自动索引** - 使用 UltraRAG 将 PDF 切片并建立向量索引
+- **自动索引** - 使用独立的文档处理服务将 PDF 切片并建立向量索引
 - **AI 摘要** - 使用本地 LLM 模型自动生成论文摘要
 - **知识提取** - 从论文中提取关键知识点
 - **邮件通知** - 更新完成后发送邮件提醒
 - **智能问答** - 支持对文献库进行自然语言查询
+- **多轮对话** - 支持上下文保持的连续对话
 
 ### 1.2 核心特性
 
@@ -38,17 +40,33 @@ IRIS (Intelligent Research Information System) 是一个自动化的人工智能
 | 交互式查询 | 支持命令行交互式问答 |
 | 批量处理 | 一次可处理多篇论文 |
 | 知识日志 | 自动提取并保存关键知识点 |
+| Specific 模式 | 使用 Milvus 元数据过滤，精确检索单篇论文 |
+| 多轮对话 | 原生支持对话会话管理 |
+| 异步架构 | 基于 async/await，性能更佳 |
 
 ### 1.3 技术栈
 
 - **Python 3.10+** - 主要编程语言
 - **arxiv** - arXiv API 客户端
-- **UltraRAG** - RAG 框架，用于文档处理和向量检索
+- **独立服务架构** - 不依赖 UltraRAG，直接调用底层 API
 - **Qwen3-Embedding-0.6B** - 嵌入模型（生成向量表示）
-- **Llama-3.2-3B-Instruct** - 生成模型（用于摘要和问答）
-- **Milvus** - 向量数据库（替代 FAISS，支持增量索引）
+- **Llama-3-2-3B-Instruct** - 生成模型（用于摘要和问答）
+- **Milvus** - 向量数据库（支持增量索引和元数据过滤）
 - **Docker** - Milvus 容器部署
-- **vLLM** - LLM 推理服务
+- **vLLM** - LLM 推理服务（OpenAI 兼容 API）
+- **chonkie** - 文档切分库（支持语义切分）
+- **pymupdf** - PDF 解析库
+
+### 1.4 架构优势
+
+| 方面 | 旧版本 (UltraRAG) | 新版本 (独立) |
+|------|------------------|-------------|
+| 依赖 | 需要 UltraRAG 框架 | 完全独立，无框架依赖 |
+| Specific 模式 | chunks 文件过滤（无效） | Milvus 元数据过滤（正确） |
+| 性能 | subprocess 调用开销 | 原生 async/await，更快 |
+| 多轮对话 | 不支持 | 原生支持 |
+| 定制化 | 受限于框架 | 完全自由 |
+| 代码结构 | UltraRAG + IRIS 两层 | IRIS 单层，更清晰 |
 
 ---
 
@@ -58,7 +76,7 @@ IRIS (Intelligent Research Information System) 是一个自动化的人工智能
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                    IRIS 文献监控系统                      │
+│                    IRIS 文献监控系统 (独立架构)            │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                              │
 │  ┌──────────┐   ┌──────────┐   ┌──────────┐    │
@@ -70,7 +88,7 @@ IRIS (Intelligent Research Information System) 是一个自动化的人工智能
 │  ┌──────────┐   ┌──────────┐   ┌──────────┐    │
 │  │论文      │   │  向量    │   │  摘要    │    │
 │  │数据库    │   │  数据库  │   │  与知识  │    │
-│  │(Milvus) │   │(Milvus)  │   │  日志     │    │
+│  │(SQLite)  │   │(Milvus)  │   │  日志     │    │
 │  └──────────┘   └──────────┘   └──────────┘    │
 │       │                             ▼       │
 │       ▼                       ┌──────────┐    │
@@ -83,52 +101,76 @@ IRIS (Intelligent Research Information System) 是一个自动化的人工智能
 
 外部服务:
 ┌──────────┐   ┌──────────┐   ┌──────────┐
-│  vLLM    │   │ UltraRAG  │   │  arXiv    │
-│  索引服务  │   │ 框架     │   │  API       │
-│  (port 65503)│└──────────┘   └──────────┘
-│──────────┤
-│  vLLM    │
-│  QA服务   │
-│  (port 65504)│
-│──────────┘
+│  vLLM    │   │  vLLM    │   │  arXiv    │
+│  索引服务  │   │  QA服务   │   │  API       │
+│  (port 65503)│  (port 65504)│  └──────────┘
+│──────────┤   └──────────┤
 ┌──────────┐
 │  Milvus  │
 │  Docker   │
 └──────────┘
 ```
 
-### 2.2 数据流
+### 2.2 服务层级架构
+
+```
+IRIS_search/
+├── src/
+│   ├── infrastructure/          # 基础设施层
+│   │   ├── milvus_service.py      # Milvus 向量数据库服务
+│   │   ├── embedding_service.py   # vLLM Embedding 服务
+│   │   ├── document_processor.py  # PDF 解析和文本切分
+│   │   └── reranker_service.py   # CrossEncoder 重排序服务
+│   ├── core/                   # 核心业务逻辑层
+│   │   ├── retriever.py          # 检索核心逻辑
+│   │   ├── index_service.py      # 索引服务（使用基础设施）
+│   │   ├── qa_service.py         # QA 服务（使用 Retriever）
+│   │   └── prompt_templates.py   # Jinja2 提示模板
+│   └── services/               # 业务服务层（独立服务）
+│       ├── arxiv_service.py       # ArXiv 搜索服务
+│       ├── paper_service.py       # SQLite 论文数据库
+│       ├── email_service.py       # 邮件通知服务
+│       └── deploy_service.py      # 基础设施部署服务
+├── scripts/                    # 运行脚本
+│   ├── run_update_cycle.py     # 主编排脚本
+│   └── iris_query.py          # 查询接口
+└── utils/                      # 工具函数
+    └── helpers.py              # 辅助函数
+```
+
+### 2.3 数据流
 
 1. **搜索阶段**: arXiv 服务搜索论文 → 获取元数据
 2. **过滤阶段**: 过滤评论文章 → 检测重复 → 下载 PDF（失败重试机制）
 3. **基础设施启动**: 启动 Milvus → 启动索引模型 vLLM → 启动 QA 模型 vLLM
-4. **索引阶段**: UltraRAG 切片 PDF → Qwen3-Embedding-0.6B 嵌入 → 写入 Milvus（增量更新）
+4. **索引阶段**:
+   ```
+   PDF → DocumentProcessor.parse_pdf()
+       → DocumentProcessor.chunk_text()
+       → EmbeddingService.encode() [async]
+       → MilvusService.insert() [with metadata]
+   ```
 5. **摘要阶段**: Llama3B 模型 → 生成摘要 → 提取知识点
 6. **通知阶段**: 邮件服务 → 发送更新通知
 7. **基础设施停止**: 停止 vLLM 模型 → 停止 Milvus
 
-### 2.3 项目结构
+### 2.4 检索流程
 
 ```
-IRIS_search/
-├── IRIS_Tutorial.md              # 本教程文档
-├── IRIS.md                     # 项目详细文档
-├── README.md                   # 英文使用指南
-├── start_IRIS.sh                # 启动脚本
-├── configs/
-│   ├── config.yaml             # 主配置文件
-│   └── questions.txt           # 标准问题集
-├── services/                   # 服务层
-│   ├── arxiv_service.py        # arXiv 搜索服务
-│   ├── index_service.py        # 索引服务
-│   ├── qa_service.py           # 问答服务
-│   ├── email_service.py        # 邮件服务
-│   └── deploy_service.py       # 基础设施部署服务
-├── scripts/                    # 脚本层
-│   ├── run_update_cycle.py     # 主编排脚本
-│   └── iris_query.py          # 查询接口
-└── utils/                      # 工具层
-    └── helpers.py              # 辅助函数
+用户问题
+    ↓
+EmbeddingService.encode() [async]
+    ↓ (生成查询向量)
+MilvusService.search(filter_expr=...)
+    ↓
+Specific 模式: filter_expr = 'doc_id == "paper_id" or doc_id like "paper_id%"'
+Global 模式: 无过滤
+    ↓
+RerankerService.rerank() [可选]
+    ↓ (重排序结果)
+QAService.generate() [async, vLLM]
+    ↓
+最终答案
 ```
 
 ---
@@ -157,37 +199,33 @@ IRIS_search/
    docker ps
    ```
 
-2. **UltraRAG 框架**
+2. **Python 虚拟环境**
    ```bash
-   cd ~/LLM_tuning/UltraRAG
-   # 确保 UltraRAG 已正确安装
+   # 创建 IRIS 专用虚拟环境
+   cd /home/NagaiYoru/LLM_tuning/IRIS_search
+   python -m venv .venv
    source .venv/bin/activate
-   which ultrarag
-   ```
-
-3. **Python 虚拟环境**
-   ```bash
-   # 使用已有的 llm_env
-   source /home/NagaiYoru/LLM_tuning/llm_env/bin/activate
    python --version  # 确认 Python 3.10+
    ```
 
-4. **模型文件**
+3. **模型文件**
    - 嵌入模型: `/home/NagaiYoru/LLM_model/Qwen3-Embedding-0.6B`
-   - 生成模型: `/home/NagaiYoru/LLM_model/Llama-3.2-3B-Instruct`
-   - 重排序模型: `/home/NagaiYoru/LLM_model/MiniCPM-Reranker-Light`
+   - 生成模型: `/home/NagaiYoru/LLM_model/llama-3-8B-Instruct`
+   - 重排序模型: `/home/NagaiYoru/LLM_model/bge-reranker-v2-m3`
 
 ### 3.3 Python 依赖安装
 
 ```bash
-source /home/NagaiYoru/LLM_tuning/llm_env/bin/activate
+cd /home/NagaiYoru/LLM_tuning/IRIS_search
+source .venv/bin/activate
 
-# 安装核心依赖
+# 安装依赖
+pip install -r requirements.txt
+
+# 或者手动安装核心依赖
 pip install arxiv PyYAML requests
-
-# UltraRAG、vLLM、sentence-transformers、faiss-gpu 等
-# 这些应该在 UltraRAG 环境中已安装
-# 如果需要，请参考 UltraRAG 的安装文档
+pip install pymupdf chonkie pymilvus openai sentence-transformers
+pip install numpy jinja2 tqdm
 ```
 
 ---
@@ -222,45 +260,55 @@ arxiv:
 ```yaml
 storage:
   database_root: /home/NagaiYoru/research/IRIS_papers  # 文献数据库路径
+  paper_db_path: /home/NagaiYoru/research/IRIS_papers/iris_papers.db  # SQLite 数据库
 ```
 
 **重要**: 文献数据库不存储在 IRIS 项目目录中，需要在配置中指定。
 
-#### 4.1.4 UltraRAG 配置 (ultrarag)
-
-```yaml
-ultrarag:
-  ultrarag_path: /home/NagaiYoru/LLM_tuning/UltraRAG
-  index_backend: milvus      # 索引后端: milvus（支持增量索引）
-  index_storage: /home/NagaiYoru/research/IRIS_papers/index_storage
-```
-
-#### 4.1.5 Milvus 配置 (milvus)
+#### 4.1.4 Milvus 配置 (milvus)
 
 ```yaml
 milvus:
-  enabled: true
-  container_name: milvus-ultrarag
-  data_dir: /home/NagaiYoru/LLM_tuning/UltraRAG/milvus_test
-  grpc_port: 29901
-  http_port: 29902
-  image: milvusdb/milvus:latest
   uri: http://localhost:29901
-  token: null
+  collection_name: iris_papers
+  master_collection: iris_master  # 主集合名称（增量索引）
+  embedding_dim: 768  # Qwen3-Embedding-0.6B 的维度
+  enabled: true
 ```
 
 **说明**：
 - Milvus 以 Docker 容器方式运行
-- `data_dir` 用于持久化向量数据
-- `grpc_port` 和 `http_port` 分别用于 gRPC 和 HTTP 访问
+- `master_collection` 用于增量索引，每次更新都追加到这个集合
+- `embedding_dim` 必须与嵌入模型匹配
 
-#### 4.1.6 模型配置 (models)
+#### 4.1.5 Embedding 配置 (embedding)
+
+```yaml
+embedding:
+  base_url: http://127.0.0.1:65503/v1
+  model_name: qwen3-embedding-0.6b
+  model_path: /home/NagaiYoru/LLM_model/Qwen3-Embedding-0.6B
+  batch_size: 32
+  enabled: true
+```
+
+#### 4.1.6 Reranker 配置 (reranker)
+
+```yaml
+reranker:
+  model_path: /home/NagaiYoru/LLM_model/bge-reranker-v2-m3
+  batch_size: 16
+  device: cpu  # 或 cuda:0
+  enabled: false  # 可选，用于检索结果重排序
+```
+
+#### 4.1.7 模型配置 (models)
 
 ```yaml
 models:
   embedding_model_path: /home/NagaiYoru/LLM_model/Qwen3-Embedding-0.6B
-  reranker_model_path: /home/NagaiYoru/LLM_model/MiniCPM-Reranker-Light
-  llm_model_path: /home/NagaiYoru/LLM_model/Llama-3.2-3B-Instruct
+  reranker_model_path: /home/NagaiYoru/LLM_model/bge-reranker-v2-m3
+  llm_model_path: /home/NagaiYoru/LLM_model/llama-3-8B-Instruct
   vllm:
     # QA 模型配置（用于问答和摘要生成）
     base_url: http://127.0.0.1:65504/v1
@@ -271,17 +319,6 @@ models:
     gpu_memory_utilization: 0.85
     tensor_parallel_size: 1
     enforce_eager: true
-
-    # 索引模型配置（用于文档嵌入）
-    index:
-      model_name: qwen3-embedding-0.6b
-      host: 127.0.0.1
-      port: 65503
-      base_url: http://127.0.0.1:65503/v1
-      max_model_len: 4096
-      gpu_memory_utilization: 0.15
-      tensor_parallel_size: 1
-      served_model_name: qwen3-embedding-0.6b
 ```
 
 **说明**：
@@ -290,18 +327,37 @@ models:
   - QA 模型（端口 65504）：用于问答和摘要生成，占用较多 GPU 资源
 - 两个模型可以同时运行，通过 `gpu_memory_utilization` 参数分配 GPU 资源
 
-#### 4.1.7 QA 配置 (qa)
+#### 4.1.8 文档处理配置 (document)
+
+```yaml
+document:
+  chunk_size: 512
+  chunk_overlap: 50
+  use_title: true
+  use_semantic: false  # 可选：是否使用语义切分
+  chunk_backend: sentence  # sentence 或 semantic
+```
+
+#### 4.1.9 检索配置 (retrieval)
+
+```yaml
+retrieval:
+  top_k: 5
+  rerank_multiplier: 3  # 检索更多用于重排序
+```
+
+#### 4.1.10 QA 配置 (qa)
 
 ```yaml
 qa:
-  question_set_path: ./configs/questions.txt
+  system_prompt: "你是一个专业的文献问答助手。请使用中文回答问题，回答要准确、专业。"
   temperature: 0.7
   top_p: 0.8
   max_tokens: 2048
-  system_prompt: "你是一个专业的UltraRAG问答助手。请一定记住使用中文回答问题,且足够专业"
+  question_set_path: ./configs/questions.txt
 ```
 
-#### 4.1.8 邮件配置 (email)
+#### 4.1.11 邮件配置 (email)
 
 ```yaml
 email:
@@ -322,10 +378,10 @@ email:
 
 ```text
 What is main problem this paper addresses?
-What are the key contributions of this paper?
+What are key contributions of this paper?
 What methods or techniques are used in this paper?
-What are the important concepts introduced in this paper?
-What are the possible research directions for future work based on this paper?
+What are important concepts introduced in this paper?
+What are possible research directions for future work based on this paper?
 ```
 
 可以自定义这些问题以获得更针对性的摘要。
@@ -342,27 +398,21 @@ What are the possible research directions for future work based on this paper?
 mkdir -p /home/NagaiYoru/research/IRIS_papers
 ```
 
-#### 步骤 2: 配置 IRIS（基础设施将自动启动）
-
-**重要**：更新周期会自动启动和管理所有基础设施：
-- Milvus 向量数据库（Docker 容器）
-- vLLM 索引模型服务（端口 65503）
-- vLLM QA 模型服务（端口 65504）
-
-无需手动启动这些服务，`DeployService` 会自动处理。
-
-**验证服务状态**（可选）：
+#### 步骤 2: 创建虚拟环境
 
 ```bash
-# 检查 Milvus 容器
-docker ps | grep milvus
-
-# 检查 vLLM 服务
-curl http://127.0.0.1:65503/v1/models  # 索引模型
-curl http://127.0.0.1:65504/v1/models  # QA 模型
+cd /home/NagaiYoru/LLM_tuning/IRIS_search
+python -m venv .venv
+source .venv/bin/activate
 ```
 
-#### 步骤 3: 配置 IRIS
+#### 步骤 3: 安装依赖
+
+```bash
+pip install -r requirements.txt
+```
+
+#### 步骤 4: 配置 IRIS
 
 ```bash
 cd /home/NagaiYoru/LLM_tuning/IRIS_search
@@ -372,19 +422,18 @@ nano configs/config.yaml  # 或使用您喜欢的编辑器
 
 # 根据您的环境修改：
 # - 模型路径
-# - UltraRAG 路径
 # - 数据库路径
 # - 邮件配置（如需要）
 ```
 
-#### 步骤 4: 运行首次更新
+#### 步骤 5: 运行首次更新
 
 ```bash
-# 方法 1: 使用启动脚本
-./start_IRIS.sh
+# 激活虚拟环境
+source .venv/bin/activate
 
-# 方法 2: 直接运行 Python 脚本
-python scripts/run_update_cycle.py
+# 运行更新脚本
+python src/scripts/run_update_cycle.py
 ```
 
 ### 5.2 守护进程模式
@@ -392,13 +441,13 @@ python scripts/run_update_cycle.py
 要让 IRIS 在后台定期运行：
 
 ```bash
-./start_IRIS.sh --daemon --interval 2
+# 方法 1: 使用 tmux/screen
+tmux new -s iris
+cd /home/NagaiYoru/LLM_tuning/IRIS_search
+source .venv/bin/activate
+python src/scripts/run_update_cycle.py
+# Ctrl+B, D 分离会话
 ```
-
-这将：
-1. 立即运行一次更新
-2. 之后每 2 小时自动运行一次
-3. 按 Ctrl+C 停止
 
 ### 5.3 设置 Cron 任务（可选）
 
@@ -409,7 +458,7 @@ python scripts/run_update_cycle.py
 crontab -e
 
 # 添加以下行（每小时运行）
-0 * * * * cd /home/NagaiYoru/LLM_tuning/IRIS_search && /home/NagaiYoru/LLM_tuning/llm_env/bin/python scripts/run_update_cycle.py >> /home/NagaiYoru/LLM_tuning/IRIS_search/logs/cron.log 2>&1
+0 * * * * cd /home/NagaiYoru/LLM_tuning/IRIS_search && /home/NagaiYoru/LLM_tuning/IRIS_search/.venv/bin/python src/scripts/run_update_cycle.py >> /home/NagaiYoru/LLM_tuning/IRIS_search/logs/cron.log 2>&1
 ```
 
 ---
@@ -422,19 +471,17 @@ crontab -e
 
 ```bash
 cd /home/NagaiYoru/LLM_tuning/IRIS_search
-./start_IRIS.sh
+source .venv/bin/activate
+python src/scripts/run_update_cycle.py
 ```
 
 输出示例：
 ```
-[INFO] Starting IRIS literature monitoring service...
-[INFO] Python environment: /home/NagaiYoru/LLM_tuning/llm_env/bin/python
-[INFO] Configuration file: configs/config.yaml
 ============================================================
 Starting IRIS Update Cycle
 ============================================================
 [INFO] [Step 1] Creating update folder...
-[INFO] Update folder: /home/NagaiYoru/research/IRIS_papers/update_2026_03_15_1200
+[INFO] Update folder: /home/NagaiYoru/research/IRIS_papers/update_2026_03_18_1200
 [INFO] [Step 2] Loading existing paper entries...
 [INFO] Found 127 existing papers in database
 [INFO] [Step 3] Initializing arXiv service...
@@ -444,7 +491,11 @@ Starting IRIS Update Cycle
 [INFO] Filtering results: 8 new, 3 duplicates, 4 review papers
 [INFO] [Step 6] Downloading PDFs...
 [INFO] Successfully downloaded 8/8 PDFs
-...
+[INFO] [Step 7] Indexing with new services...
+[INFO] Embedding 45 chunks...
+[INFO] Inserting into Milvus...
+[INFO] QA processing...
+[INFO] Generated summaries for 8 papers
 ============================================================
 IRIS Update Cycle Completed Successfully
 ============================================================
@@ -456,7 +507,7 @@ IRIS Update Cycle Completed Successfully
 
 ```
 IRIS_papers/
-└── update_2026_03_15_1200/
+└── update_2026_03_18_1200/
     ├── pdfs/                          # 下载的 PDF 文件
     │   ├── 2603.09973v1.pdf
     │   └── ...
@@ -472,7 +523,9 @@ IRIS_papers/
 #### 6.2.1 交互式查询模式
 
 ```bash
-python scripts/iris_query.py --interactive
+cd /home/NagaiYoru/LLM_tuning/IRIS_search
+source .venv/bin/activate
+python src/scripts/iris_query.py --interactive
 ```
 
 交互示例：
@@ -481,10 +534,17 @@ python scripts/iris_query.py --interactive
 IRIS Interactive Query Mode
 ========================================
 
-Enter your questions about the literature.
-Type 'quit' or 'exit' to exit.
+Current mode: global
+Commands:
+  /mode <global|specific>  - Switch query mode
+  /paper <id>             - Set paper for specific mode
+  /list                    - List available papers
+  /search <keyword>        - Search papers by keyword
+  /quit                    - Exit
 
-IRIS> What machine learning methods are used in neutrino experiments?
+Enter your questions about literature.
+
+IRIS[global]> What machine learning methods are used in neutrino experiments?
 ----------------------------------------
 Question: What machine learning methods are used in neutrino experiments?
 ----------------------------------------
@@ -494,250 +554,368 @@ Answer:
 
 1. 卷积神经网络（CNN）：用于中微子探测器中的信号重建和模式识别...
 （详细回答...）
-
-IRIS> What are the latest findings from JUNO?
-----------------------------------------
-Question: What are the latest findings from JUNO?
-----------------------------------------
-...
 ```
 
-#### 6.2.2 单次查询
+#### 6.2.2 Specific 模式查询
 
 ```bash
-python scripts/iris_query.py "What are the key differences between liquid and scintillator detectors?"
+# 列出可用论文
+python src/scripts/iris_query.py --list-papers
+
+# 特定论文查询
+python src/scripts/iris_query.py --mode specific --paper-id 2401.12345 "What is the main method?"
 ```
 
-#### 6.2.3 查看可用更新
+#### 6.2.3 单次查询（Global 模式）
 
 ```bash
-python scripts/iris_query.py --list-updates
+python src/scripts/iris_query.py "What are the key differences between liquid and scintillator detectors?"
+```
+
+#### 6.2.4 查看可用更新
+
+```bash
+python src/scripts/iris_query.py --list-updates
 ```
 
 输出示例：
 ```
 Available Updates:
 
-  update_2026_03_15_1200
-    Time: 2026-03-15T12:00:00
+  update_2026_03_18_1200
+    Time: 2026-03-18T12:00:00
     New papers: 8
 
-  update_2026_03_15_1400
-    Time: 2026-03-15T14:00:00
+  update_2026_03_18_1400
+    Time: 2026-03-18T14:00:00
     New papers: 5
-```
-
-#### 6.2.4 查询特定更新
-
-```bash
-python scripts/iris_query.py --update update_2026_03_15_1200 "What is the energy resolution threshold?"
 ```
 
 ### 6.3 命令行选项
 
 ```bash
 # 查看帮助
-python scripts/iris_query.py --help
+python src/scripts/iris_query.py --help
 
 # 使用自定义配置
-python scripts/iris_query.py --config custom_config.yaml
+python src/scripts/iris_query.py --config custom_config.yaml
 
 # 指定数据库路径
-python scripts/iris_query.py --database /path/to/database
+python src/scripts/iris_query.py --database /path/to/database
 
-# 指定更新目录
-python scripts/iris_query.py --update update_2026_03_15_1200
+# 启动基础设施
+python src/scripts/iris_query.py --start-infra
 
-# 显式指定索引文件
-python scripts/iris_query.py --chunks /path/to/chunks.jsonl --index /path/to/index.index
+# 交互模式
+python src/scripts/iris_query.py -i
+
+# Global 模式（默认）
+python src/scripts/iris_query.py "问题"
+
+# Specific 模式
+python src/scripts/iris_query.py -m specific --paper-id 2401.12345 "问题"
 ```
 
 ---
 
 ## 7. 实现细节说明
 
-### 7.1 arXiv 服务 (`services/arxiv_service.py`)
+### 7.1 架构设计原则
 
-#### 核心功能
+IRIS 采用分层架构设计，各层职责明确：
 
-1. **论文搜索** (`search_papers`)
-   - 使用 `arxiv` Python 库查询 arXiv API
-   - 支持多关键词 OR 搜索
-   - 按提交日期排序
+```
+┌─────────────────────────────────────────────────┐
+│  scripts/  - 入口和编排逻辑            │
+├─────────────────────────────────────────────────┤
+│  services/  - 独立业务服务           │
+│  （不依赖 UltraRAG）                │
+├─────────────────────────────────────────────────┤
+│  core/      - 核心检索和 QA 逻辑        │
+│  （使用基础设施服务）                │
+├─────────────────────────────────────────────────┤
+│  infrastructure/ - 底层技术服务         │
+│  （Milvus, Embedding 等）           │
+└─────────────────────────────────────────────────┘
+```
 
-2. **论文过滤** (`filter_papers`)
-   - 重复检测：基于 `entry_id`
-   - 评论文章过滤：检测标题和摘要中的关键词（review, survey, overview）
+**设计原则**：
+1. **基础设施层**：封装底层技术细节（Milvus、Embedding、Document Process）
+2. **核心层**：实现业务逻辑（Retriever、QA、Index）
+3. **服务层**：提供独立业务功能（ArXiv、Paper、Email）
+4. **脚本层**：编排整个流程
 
-3. **PDF 下载** (`download_pdf`, `download_pdfs`)
-   - 使用 `requests` 库下载 PDF
-   - 支持批量下载
-   - 错误处理和重试
-   - **失败处理**：跳过 PDF 下载失败的文章，继续处理其他文章
-   - **重试逻辑**：系统会搜索更多论文以填补失败的下载
+### 7.2 基础设施服务 (src/infrastructure/)
 
-#### 关键代码
+#### 7.2.1 Milvus 服务 (`milvus_service.py`)
 
+**核心功能**：
+- 集合管理（创建、删除）
+- 向量插入（批量处理）
+- 向量检索（支持元数据过滤）
+- 文档 ID 查询（通过 `doc_id` 字段）
+
+**关键特性**：
+- 使用 Milvus 元数据过滤实现 Specific 模式
+- 过滤表达式：`doc_id == "paper_id" or doc_id like "paper_id%"`
+- 支持增量索引（不覆盖现有数据）
+
+**代码示例**：
 ```python
-# 构建 OR 查询
-query_parts = []
-for item in self.keywords:
-    if " " in item:
-        query_parts.append('"' + item + '"')  # 多词关键词加引号
-    else:
-        query_parts.append(item)
-query = " OR ".join(query_parts)
+from infrastructure.milvus_service import MilvusService
 
-# 搜索 arXiv
-search = arxiv.Search(
-    query=query,
-    max_results=self.max_results,
-    sort_by=self.sort_by
+milvus = MilvusService(
+    uri="http://localhost:29901",
+    collection_name="iris_papers",
+    embedding_dim=768
+)
+
+# 创建集合
+milvus.create_collection(dim=768, overwrite=False)
+
+# 插入数据（带元数据）
+milvus.insert(embeddings, chunks)
+
+# Specific 模式检索（使用元数据过滤）
+results = milvus.search(
+    query_embedding,
+    top_k=5,
+    filter_expr='doc_id == "2401.12345" or doc_id like "2401.12345%"'
 )
 ```
 
-### 7.2 索引服务 (`services/index_service.py`)
+#### 7.2.2 Embedding 服务 (`embedding_service.py`)
 
-#### 核心功能
+**核心功能**：
+- 异步批量编码
+- vLLM OpenAI 兼容 API
+- 错误处理和重试
 
-1. **调用 UltraRAG** (`chunk_and_index`)
-   - 创建运行时参数文件
-   - 执行 `ultrarag run` 命令
-   - 处理 UltraRAG 输出
-
-2. **参数模板替换**
-   - 从模板文件创建运行时参数
-   - 替换占位符（如 `__RAW_PDF_DIR__`）
-   - 支持模型路径、输出路径等配置
-
-#### UltraRAG 工作流（Milvus）
-
-```
-PDF 文件夹
-    ↓
-UltraRAG offline_build_index_watch.yaml
-    ↓
-[corpus.parse_file_path] → 文本提取
-    ↓
-[corpus.chunk_backend: sentence] → 句子切分
-    ↓
-[retriever.model_name_or_path] → Qwen3-Embedding-0.6B
-    ↓
-[retriever.index_backend_configs.milvus] → Milvus 向量数据库
-    ↓
-chunks.jsonl + Milvus Collection
-```
-
-**Milvus 优势**：
-- 支持增量索引，无需重建整个索引
-- 适合大规模向量检索
-- 提供 REST/gRPC 接口，支持分布式部署
-
-#### 关键代码
-
+**代码示例**：
 ```python
-# 创建运行时参数文件
-replacements = {
-    "RAW_PDF_DIR": str(pdf_dir.absolute()),
-    "CHUNKS_OUTPUT_PATH": str(chunks_output.absolute()),
-    "INDEX_OUTPUT_PATH": str(index_output.absolute()),
-    "EMBEDDING_MODEL_PATH": self.embedding_model,
-}
+from infrastructure.embedding_service import EmbeddingService
 
-# 替换模板中的占位符
-with open(template_path, "r") as f:
-    content = f.read()
-for key, value in replacements.items():
-    content = content.replace(f"__{key}__", str(value))
-```
-
-### 7.3 QA 服务 (`services/qa_service.py`)
-
-#### 核心功能
-
-1. **知识库查询** (`query_knowledge_base`)
-   - 支持单问题和批量问题
-   - 通过 vLLM API 调用 Llama3B
-   - 使用 UltraRAG 的检索管道
-
-2. **vLLM 服务健康检查** (`check_vllm_service`)
-   - 检查 vLLM 服务是否就绪
-   - 支持超时设置
-
-3. **答案提取** (`_extract_answers`)
-   - 从 UltraRAG 输出 JSON 中提取答案
-   - 映射问题和答案
-
-#### RAG 检索增强生成流程
-
-```
-用户问题
-    ↓
-[retriever] → 向量相似度检索 (Qwen0.3B)
-    ↓
-[reranker] → 结果重排序 (MiniCPM-Reranker)
-    ↓
-Top-k 相关 chunks
-    ↓
-[generation] → Llama3B 生成回答
-    ↓
-最终答案
-```
-
-#### 关键代码
-
-```python
-# 检查 vLLM 服务状态
-health_url = self.vllm_base_url.rstrip("/").replace("/v1", "") + "/v1/models"
-response = requests.get(health_url, timeout=5)
-if response.status_code == 200:
-    return True
-
-# 调用 UltraRAG QA 流水线
-result = subprocess.run(
-    [ultrarag_cmd, "run", str(pipeline_yaml)],
-    cwd=self.ultrarag_path,
-    capture_output=True,
-    env=env
+embed_svc = EmbeddingService(
+    base_url="http://127.0.0.1:65503/v1",
+    model_name="qwen3-embedding-0.6b",
+    batch_size=32
 )
+
+# 异步编码
+embeddings = await embed_svc.encode(["文本1", "文本2"])
+
+# 同步编码（用于非异步上下文）
+embeddings = embed_svc.encode_sync(["文本1", "文本2"])
 ```
 
-### 7.4 邮件服务 (`services/email_service.py`)
+#### 7.2.3 文档处理服务 (`document_processor.py`)
 
-#### 核心功能
+**核心功能**：
+- PDF 解析（使用 pymupdf）
+- 文本切分（使用 chonkie 或简单字符切分）
+- 元数据提取（doc_id, title, contents）
 
-1. **邮件发送** (`send_notification`)
-   - 支持 SMTP/TLS
-   - 支持纯文本和 HTML 格式
-   - 支持附件（可扩展）
-
-2. **更新通知** (`send_update_notification`)
-   - 自动生成更新摘要
-   - 包含新论文列表
-   - 包含摘要和知识日志
-   - HTML 格式化
-
-#### 邮件内容结构
-
+**代码示例**：
 ```python
-# MIME 多部分邮件
-message = MIMEMultipart("alternative")
-message["Subject"] = self.subject_prefix + subject
-message["From"] = self.sender
-message["To"] = self.receiver
+from infrastructure.document_processor import DocumentProcessor
 
-# 添加纯文本部分
-text_part = MIMEText(content, "plain", "utf-8")
-message.attach(text_part)
+processor = DocumentProcessor(
+    chunk_size=512,
+    chunk_overlap=50,
+    use_semantic_chunking=False
+)
 
-# 添加 HTML 部分
-html_part = MIMEText(html_content, "html", "utf-8")
-message.attach(html_part)
+# 解析 PDF
+doc = processor.parse_pdf(Path("paper.pdf"))
+
+# 切分文本
+chunks = processor.chunk_text(
+    text=doc['contents'],
+    doc_id=doc['id'],
+    title=doc['title'],
+    chunk_size=512
+)
+
+# 或一步完成
+chunks = processor.parse_and_chunk_pdf(Path("paper.pdf"))
 ```
+
+#### 7.2.4 Reranker 服务 (`reranker_service.py`)
+
+**核心功能**：
+- CrossEncoder 重排序
+- 批量处理
+- 设备选择（CPU/GPU）
+
+**代码示例**：
+```python
+from infrastructure.reranker_service import RerankerService
+
+reranker = RerankerService(
+    model_path="/path/to/bge-reranker-v2-m3",
+    device="cpu"
+)
+
+# 重排序
+reranked = reranker.rerank(query, passages, top_k=5)
+```
+
+### 7.3 核心服务 (src/core/)
+
+#### 7.3.1 检索器 (`retriever.py`)
+
+**核心功能**：
+- 整合 Embedding、Milvus、Reranker
+- 支持 global/specific 模式
+- 异步检索
+
+**实现逻辑**：
+```python
+class Retriever:
+    async def retrieve(self, query, mode="global", paper_id=None, top_k=5):
+        # 1. 生成查询 embedding
+        query_emb = await self.embedding_service.encode([query])
+
+        # 2. 构建 Milvus filter 表达式
+        filter_expr = None
+        if mode == "specific" and paper_id:
+            filter_expr = f'doc_id == "{paper_id}" or doc_id like "{paper_id}%"'
+
+        # 3. Milvus 检索（获取更多用于 rerank）
+        results = self.milvus_service.search(
+            query_emb[0],
+            top_k=top_k * 3,
+            filter_expr=filter_expr
+        )
+
+        # 4. Rerank
+        if self.reranker_service and len(results) > top_k:
+            passages = [r['contents'] for r in results]
+            reranked = self.reranker_service.rerank(query, passages, top_k)
+            results = [results[idx] for idx, _ in reranked]
+
+        return results[:top_k]
+```
+
+#### 7.3.2 索引服务 (`index_service.py`)
+
+**核心功能**：
+- 批量处理 PDF
+- 异步 embedding 和 Milvus 插入
+- 保存 chunks.jsonl 文件
+
+**实现逻辑**：
+```python
+class IndexService:
+    async def chunk_and_index(self, pdf_dir, output_dir, overwrite=False):
+        # 1. 处理所有 PDF
+        all_chunks = []
+        for pdf_file in Path(pdf_dir).glob("*.pdf"):
+            chunks = self.doc_processor.parse_and_chunk_pdf(pdf_file)
+            all_chunks.extend(chunks)
+
+        # 2. 生成 embeddings
+        texts = [c['contents'] for c in all_chunks]
+        embeddings = await self.embedding_service.encode(texts)
+
+        # 3. 存入 Milvus
+        self.milvus_service.insert(embeddings, all_chunks)
+
+        # 4. 保存 chunks.jsonl
+        with open(chunks_file, 'w') as f:
+            for chunk in all_chunks:
+                f.write(json.dumps(chunk) + '\n')
+```
+
+#### 7.3.3 QA 服务 (`qa_service.py`)
+
+**核心功能**：
+- RAG 问答
+- Global/Specific 模式支持
+- 多轮对话会话管理
+- 批量问答
+
+**实现逻辑**：
+```python
+class QAService:
+    async def query(self, question, mode="global", paper_id=None, top_k=5):
+        # 1. 检索相关 chunks
+        retrieved = await self.retriever.retrieve(
+            question,
+            mode=mode,
+            paper_id=paper_id,
+            top_k=top_k
+        )
+
+        # 2. 构建上下文
+        context = "\n\n".join([
+            f"[文档 {i+1}]\n{r['contents']}"
+            for i, r in enumerate(retrieved)
+        ])
+
+        # 3. 构建提示
+        messages = [
+            {"role": "system", "content": self.system_prompt},
+            {"role": "user", "content": f"参考文档：\n{context}\n\n问题：{question}"}
+        ]
+
+        # 4. 生成答案
+        response = await self.client.chat.completions.create(
+            model=self.model_name,
+            messages=messages,
+            temperature=0.7,
+            max_tokens=2048
+        )
+
+        return response.choices[0].message.content
+
+    # 多轮对话支持
+    def create_conversation(self) -> str:
+        return str(uuid.uuid4())
+
+    async def query_with_conversation(self, session_id, question, mode="global", paper_id=None):
+        history = self._get_history(session_id)
+        answer = await self.query(question, mode, paper_id, conversation_history=history)
+        self._save_history(session_id, question, answer)
+        return answer
+```
+
+### 7.4 独立业务服务 (src/services/)
+
+这些服务不依赖 UltraRAG，保持独立实现：
+
+#### 7.4.1 ArXiv 服务 (`arxiv_service.py`)
+
+**核心功能**：
+- 论文搜索（多关键词 OR 查询）
+- 重复检测（基于 entry_id）
+- 评论文章过滤
+- PDF 下载（失败重试）
+
+#### 7.4.2 Paper 服务 (`paper_service.py`)
+
+**核心功能**：
+- SQLite 数据库管理
+- 论文增删查改
+- 状态管理（new, duplicate, review）
+
+#### 7.4.3 Email 服务 (`email_service.py`)
+
+**核心功能**：
+- SMTP/TLS 邮件发送
+- HTML 格式支持
+- 更新通知生成
+
+#### 7.4.4 Deploy 服务 (`deploy_service.py`)
+
+**核心功能**：
+- Milvus Docker 容器管理
+- vLLM 模型服务管理（索引 + QA 两个服务）
+- 健康检查和自动重启
 
 ### 7.5 主编排器 (`scripts/run_update_cycle.py`)
 
-#### 完整更新流程
+**完整更新流程**：
 
 ```
 开始
@@ -756,118 +934,20 @@ message.attach(html_part)
   ↓
 [Step 7] 保存元数据
   ↓
-[Step 8] 生成更新日志
+[Step 8] 启动基础设施（Milvus + vLLM 索引 + vLLM QA）
   ↓
-[Step 8.5] 启动基础设施（Milvus + vLLM 索引模型 + vLLM QA 模型）
+[Step 9] 构建索引（使用新独立服务）
   ↓
-[Step 9] 构建 UltraRAG 索引（如果有新论文）
-  ↓
-[Step 10] QA 处理（如果索引成功）
+[Step 10] QA 处理（使用新 QAService）
   ↓
 [Step 11] 生成摘要和知识日志
   ↓
 [Step 12] 发送邮件通知
   ↓
-[Step 11.5] 停止基础设施
+[Step 13] 停止基础设施
   ↓
 完成
 ```
-
-**PDF 下载失败处理**：
-- 系统使用重试循环确保下载足够数量的论文
-- 失败的 PDF 不会中断流程，会被记录并跳过
-- 只有成功下载的论文才会进入索引和 QA 处理
-
-#### 摘要生成格式
-
-每篇论文生成以下结构：
-
-```markdown
-## [论文标题]
-
-**Authors:** 作者列表
-**arXiv ID:** 论文 ID
-
-### Abstract Summary
-摘要内容...
-
-### Key Information
-
-**Main Problem:**
-问题描述的答案...
-
-**Key Contributions:**
-关键贡献的答案...
-
-**Methods:**
-方法技术的答案...
-
-**Important Concepts:**
-重要概念的答案...
-
-**Research Directions:**
-研究方向的答案...
-```
-
-### 7.6 部署服务 (`services/deploy_service.py`)
-
-#### 核心功能
-
-`DeployService` 统一管理 IRIS 所需的基础设施：
-- **MilvusControl**: 管理 Milvus Docker 容器
-- **VllmControl**: 管理 vLLM 模型服务（索引和 QA）
-
-#### Milvus 管理
-
-```python
-class MilvusControl:
-    - search(): 检查容器是否运行
-    - start(): 启动 Milvus 容器（支持已存在容器）
-    - stop(): 停止容器
-```
-
-**Milvus 配置**：
-- 使用 Docker standalone 模式
-- 数据持久化到 `data_dir`
-- 健康检查确保服务可用性
-- 自动重启策略
-
-#### vLLM 管理
-
-```python
-class VllmControl:
-    - search(): 检查服务健康状态
-    - start(): 以子进程方式启动模型
-    - stop(): 优雅停止模型进程
-```
-
-**两个 vLLM 服务**：
-1. **索引模型** (Qwen3-Embedding-0.6B, 端口 65503)
-   - 用于文档嵌入生成
-   - GPU 内存占用约 15%
-
-2. **QA 模型** (Llama-3.2-3B-Instruct, 端口 65504)
-   - 用于问答和摘要生成
-   - GPU 内存占用约 85%
-
-#### 统一管理
-
-```python
-class DeployService:
-    - start_infrastructure(): 启动 Milvus + 两个 vLLM
-    - stop_infrastructure(): 停止所有服务
-```
-
-**启动顺序**：
-1. 检查/启动 Milvus
-2. 等待 Milvus 就绪
-3. 启动索引模型 vLLM
-4. 启动 QA 模型 vLLM
-
-**停止顺序**：
-1. 停止两个 vLLM
-2. 等待 vLLM 停止
-3. 停止 Milvus
 
 ---
 
@@ -904,8 +984,7 @@ class DeployService:
 
 **症状**：
 ```
-[ERROR] vLLM index service not ready after 30 seconds
-[ERROR] vLLM qa service not ready after 30 seconds
+[ERROR] vLLM service not ready after 30 seconds
 ```
 
 **解决方案**：
@@ -927,31 +1006,7 @@ class DeployService:
    nvidia-smi
    ```
 
-#### 问题 3: UltraRAG 命令找不到
-
-**症状**：
-```
-[ERROR] UltraRAG run failed with code 127
-ultrarag: command not found
-```
-
-**解决方案**：
-
-1. 检查 UltraRAG 是否正确安装：
-   ```bash
-   cd /home/NagaiYoru/LLM_tuning/UltraRAG
-   ls .venv/bin/ultrarag
-   ```
-
-2. 确认虚拟环境已激活：
-   ```bash
-   source /home/NagaiYoru/LLM_tuning/UltraRAG/.venv/bin/activate
-   which ultrarag
-   ```
-
-3. 检查配置文件中的 UltraRAG 路径
-
-#### 问题 4: 模型文件不存在
+#### 问题 3: 模型文件不存在
 
 **症状**：
 ```
@@ -970,9 +1025,7 @@ ultrarag: command not found
    grep "model_path" configs/config.yaml
    ```
 
-3. 下载缺失的模型（如果需要）
-
-#### 问题 5: PDF 下载失败
+#### 问题 4: PDF 下载失败
 
 **症状**：
 ```
@@ -992,35 +1045,49 @@ ultrarag: command not found
    df -h /home/NagaiYoru/research/IRIS_papers
    ```
 
-3. 查看详细日志：
-   ```bash
-   tail -f logs/iris_*.log
+#### 问题 5: Specific 模式检索不正确
+
+**症状**：
+```
+检索结果包含其他论文的内容
+```
+
+**解决方案**：
+
+1. 检查 Milvus 元数据是否正确存储：
+   ```python
+   from infrastructure.milvus_service import MilvusService
+   milvus = MilvusService(...)
+   results = milvus.get_chunks_by_doc_id("2401.12345")
+   print(f"Retrieved {len(results)} chunks for doc_id")
    ```
+
+2. 确认 `doc_id` 字段在 chunks 中正确设置
 
 #### 问题 6: 索引构建失败
 
 **症状**：
 ```
-[ERROR] UltraRAG run failed with code 1
+[ERROR] Index build failed
 ```
 
 **解决方案**：
 
-1. 检查 UltraRAG 日志：
+1. 检查日志：
    ```bash
-   tail -f ~/LLM_tuning/UltraRAG/logs/*.log
+   tail -f logs/iris_*.log
    ```
 
-2. 手动运行 UltraRAG 进行调试：
+2. 检查 Milvus 连接：
    ```bash
-   cd /home/NagaiYoru/LLM_tuning/UltraRAG
+   curl http://localhost:29901/healthz
+   ```
+
+3. 手动测试服务：
+   ```bash
+   cd /home/NagaiYoru/LLM_tuning/IRIS_search
    source .venv/bin/activate
-   ultrarag run pipelines/offline_build_index_watch.yaml
-   ```
-
-3. 检查 GPU 可用性：
-   ```bash
-   nvidia-smi
+   python test_new_services.py
    ```
 
 ### 8.2 调试方法
@@ -1029,7 +1096,7 @@ ultrarag: command not found
 
 ```bash
 # 运行时指定调试级别
-python scripts/run_update_cycle.py --log-level DEBUG
+python src/scripts/run_update_cycle.py --log-level DEBUG
 
 # 或修改配置文件
 # 编辑 configs/config.yaml
@@ -1046,7 +1113,7 @@ ls -lt logs/
 # 实时查看日志
 tail -f logs/iris_$(date +%Y%m%d_%H%M%S).log
 
-# 查看完整日志
+# 查看错误
 cat logs/iris_*.log | grep ERROR
 ```
 
@@ -1067,14 +1134,14 @@ ls -td update_* | tail -n +6 | xargs rm -rf
 
 如果需要重建整个索引：
 
-1. 备份当前索引：
+1. 备份当前数据库：
    ```bash
-   cp -r index_storage index_storage_backup
+   cp -r /home/NagaiYoru/research/IRIS_papers/iris_papers.db iris_papers_backup.db
    ```
 
-2. 删除旧索引：
+2. 删除 Milvus 集合：
    ```bash
-   rm -rf index_storage
+   python -c "from infrastructure.milvus_service import MilvusService; m = MilvusService('http://localhost:29901', 'iris_papers'); m.drop_collection()"
    ```
 
 3. 重新运行更新周期（将重建索引）
@@ -1087,41 +1154,42 @@ ls -td update_* | tail -n +6 | xargs rm -rf
 
 | 命令 | 描述 |
 |------|------|
-| `./start_IRIS.sh` | 运行单次更新 |
-| `./start_IRIS.sh --daemon` | 守护进程模式 |
-| `python scripts/run_update_cycle.py` | 直接运行更新脚本 |
-| `python scripts/iris_query.py -i` | 交互式查询 |
-| `python scripts/iris_query.py "问题"` | 单次查询 |
-| `python scripts/iris_query.py -l` | 列出更新 |
+| `source .venv/bin/activate` | 激活虚拟环境 |
+| `python src/scripts/run_update_cycle.py` | 运行单次更新 |
+| `python src/scripts/iris_query.py -i` | 交互式查询 |
+| `python src/scripts/iris_query.py "问题"` | 单次查询 |
+| `python src/scripts/iris_query.py -l` | 列出更新 |
+| `python src/scripts/iris_query.py -m specific --paper-id XXXXX "问题"` | Specific 模式查询 |
+| `python test_new_services.py` | 测试新服务 |
 
 ### A.2 配置参数速查
 
 | 参数 | 默认值 | 说明 |
 |------|---------|------|
-| `update.interval_hours` | 1 | 更新间隔（小时） |
-| `arxiv.max_results_per_keyword` | 4 | 每关键词最大结果 |
+| `update.interval_hours` | 2 | 更新间隔（小时） |
+| `arxiv.max_results_per_keyword` | 20 | 每关键词最大结果 |
 | `storage.database_root` | `~/research/IRIS_papers` | 数据库路径 |
-| `ultrarag.index_backend` | `milvus` | 索引后端（milvus） |
-| `milvus.container_name` | `milvus-ultrarag` | Milvus 容器名 |
+| `milvus.uri` | `http://localhost:29901` | Milvus 服务地址 |
+| `milvus.collection_name` | `iris_papers` | Milvus 集合名称 |
 | `models.embedding_model_path` | Qwen3-Embedding-0.6B | 嵌入模型 |
-| `models.llm_model_path` | Llama-3.2-3B-Instruct | 生成模型 |
-| `models.vllm.port` | 65504 | QA 模型端口 |
-| `models.vllm.index.port` | 65503 | 索引模型端口 |
+| `models.llm_model_path` | llama-3-8B-Instruct | 生成模型 |
+| `embedding.base_url` | `http://127.0.0.1:65503/v1` | Embedding 服务地址 |
+| `models.vllm.base_url` | `http://127.0.0.1:65504/v1` | QA 服务地址 |
 
 ### A.3 相关链接
 
 - [arXiv](https://arxiv.org/)
-- [UltraRAG 文档](https://github.com/OpenBMB/UltraRAG)
 - [Milvus 文档](https://milvus.io/docs)
 - [vLLM 文档](https://docs.vllm.ai/)
 - [Qwen 模型](https://huggingface.co/Qwen)
 - [Llama 模型](https://huggingface.co/meta-llama)
+- [Chonkie](https://github.com/bhavnicksm/chonkie)
 
 ---
 
 ## 总结
 
-IRIS 提供了一个完整的自动化文献监控和知识管理解决方案。通过本教程，您应该能够：
+IRIS 提供了一个完整的自动化文献监控和知识管理解决方案，**完全独立于 UltraRAG 框架**。通过本教程，您应该能够：
 
 1. ✓ 部署完整的 IRIS 系统
 2. ✓ 配置所有必要的参数
@@ -1129,5 +1197,6 @@ IRIS 提供了一个完整的自动化文献监控和知识管理解决方案。
 4. ✓ 使用交互式查询接口
 5. ✓ 理解系统的实现原理
 6. ✓ 处理常见问题和故障
+7. ✓ 了解新架构的优势和特性
 
 如有问题，请查看日志文件或参考故障排除章节。

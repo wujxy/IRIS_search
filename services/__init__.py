@@ -1,3 +1,0 @@
-"""
-IRIS Services Package
-"""

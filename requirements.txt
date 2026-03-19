@@ -1,0 +1,53 @@
+# IRIS Search Requirements
+# Independent of UltraRAG framework
+
+# ============================================================
+# Core Dependencies
+# ============================================================
+arxiv>=1.4.0  # arXiv API client for paper search and download
+vllm>=0.6.0  # vLLM inference engine
+pyyaml>=6.0
+python-dotenv>=1.0.0
+
+# ============================================================
+# Independent Services Dependencies (New)
+# ============================================================
+
+# PDF parsing
+pymupdf>=1.23.0  # PyMuPDF for PDF parsing
+
+# Text chunking
+chonkie>=0.3.0  # Document chunking library
+
+# Milvus vector database
+pymilvus>=2.3.0  # Milvus client
+
+# Embedding (vLLM OpenAI compatible API)
+openai>=1.12.0  # OpenAI compatible client for vLLM
+
+# Reranker (CrossEncoder)
+sentence-transformers>=2.3.0  # CrossEncoder models
+
+# ============================================================
+# Data Processing
+# ============================================================
+numpy>=1.24.0
+
+# ============================================================
+# Logging
+# ============================================================
+tqdm>=4.65.0  # Progress bars
+
+# ============================================================
+# Optional: GPU acceleration
+# ============================================================
+# Uncomment if using CUDA
+# torch>=2.0.0
+# torchvision>=0.15.0
+
+# ============================================================
+# UltraRAG dependencies (legacy, for backward compatibility)
+# ============================================================
+# These are kept for backward compatibility during migration
+# Can be removed after migration is complete
+# ultrarag  # Uncomment if still using UltraRAG for some features

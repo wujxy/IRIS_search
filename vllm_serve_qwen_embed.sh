@@ -1,7 +1,6 @@
 #!/bin/bash
 
-ULTRARAG="/home/NagaiYoru/LLM_tuning/UltraRAG"
-source $ULTRARAG/.venv/bin/activate
+source .venv/bin/activate
 
 CUDA_VISIBLE_DEVICES=0 python -m vllm.entrypoints.openai.api_server \
     --served-model-name qwen3-embedding-0.6b \
