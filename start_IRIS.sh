@@ -102,7 +102,7 @@ cd "$SCRIPT_DIR"
 # Function to run single update cycle
 run_update_cycle() {
     print_info "Running update cycle..."
-    $PYTHON_ENV scripts/run_update_cycle.py --config "$CONFIG_FILE"
+    $PYTHON_ENV scripts/run_update_cycle.py --config "$CONFIG_FILE" --log-level DEBUG
     exit_code=$?
 
     if [ $exit_code -eq 0 ]; then

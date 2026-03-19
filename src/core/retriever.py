@@ -94,13 +94,19 @@ class Retriever:
         # 2. Milvus search (retrieve more if reranking)
         retrieval_count = min(self.retrieval_top_k, top_k * 3) if self.reranker_service else top_k
 
+        logger.debug(f"Milvus search: top_k={retrieval_count}, filter={filter_expr}")
+
         results = self.milvus_service.search(
             query_emb[0],
             top_k=retrieval_count,
-            filter_expr=filter_expr
+            filter_expr=filter_expr,
+            output_fields=["*"]  # Explicitly request all fields
         )
 
         logger.debug(f"Retrieved {len(results)} chunks from Milvus")
+        if results:
+            logger.debug(f"First result keys: {list(results[0].keys())}")
+            logger.debug(f"First result has 'contents': {'contents' in results[0]}")
 
         # 3. Rerank if enabled and have enough results
         if self.reranker_service and len(results) > top_k:

@@ -12,9 +12,11 @@ logger = logging.getLogger(__name__)
 
 try:
     from pymilvus import MilvusClient, DataType
+    from pymilvus.client.search_result import HybridHits
 except ImportError:
     MilvusClient = None
     DataType = None
+    HybridHits = None
 
 
 class MilvusService:
@@ -292,6 +294,16 @@ class MilvusService:
 
         client = self._client_connect()
 
+        # Ensure collection is loaded before search
+        try:
+            load_state = client.get_load_state(collection_name=collection_name)
+            logger.debug(f"Collection load state: {load_state}")
+            if load_state.get("state") != "LoadedState":
+                logger.debug(f"Loading collection: {collection_name}")
+                client.load_collection(collection_name)
+        except Exception as e:
+            logger.debug(f"Collection load check: {e}")
+
         query_embedding = query_embedding.reshape(1, -1) if query_embedding.ndim == 1 else query_embedding
 
         if query_embedding.ndim != 2:
@@ -324,28 +336,70 @@ class MilvusService:
         # Process results - handle different pymilvus return formats
         results = []
 
+        logger.debug(f"Search result type: {type(res)}")
+
         # Extract results from different possible pymilvus return formats
         raw_results = []
-        if isinstance(res, list):
-            # Direct list format (pymilvus 2.3.x+)
+
+        # Convert SearchResult to list (handles pymilvus 2.4+ SearchResult objects)
+        if hasattr(res, '__iter__'):
+            raw_results = list(res)
+        elif isinstance(res, list):
             raw_results = res
         elif isinstance(res, dict) and 'data' in res:
-            # Dict with 'data' key format (pymilvus 2.4.x+)
             raw_results = res.get('data', [])
         elif isinstance(res, dict) and 'hits' in res:
-            # HybridSearchResult format with hits
             raw_results = res.get('hits', [])
         elif isinstance(res, dict) and 'results' in res:
-            # Alternative dict format
             raw_results = res.get('results', [])
-        elif hasattr(res, '__iter__'):
-            # Directly iterable
-            raw_results = list(res)
         else:
             logger.warning(f"Unexpected search result type: {type(res)}")
             raw_results = []
 
         for hit in raw_results:
+            # Handle HybridHits (batch result from pymilvus 2.4+)
+            # When iterating SearchResult, we get HybridHits objects containing arrays
+            # Use get_raw_item(i) to get individual Hit objects, then convert to dict
+            if (HybridHits and isinstance(hit, HybridHits)) or (
+                hasattr(hit, 'ids') and
+                hasattr(hit, 'distances') and
+                hasattr(hit, 'dynamic_fields')
+            ):
+                logger.debug(f"Unpacking HybridHits with {len(hit.ids)} results")
+
+                for i in range(len(hit.ids)):
+                    try:
+                        raw_hit = hit.get_raw_item(i)
+                    except Exception as e:
+                        logger.debug(f"Failed to get_raw_item({i}): {e}")
+                        continue
+
+                    # Convert Hit to dict to get all fields
+                    result = raw_hit.to_dict()
+
+                    # Flatten entity fields into result (entity contains dynamic fields like contents, doc_id, title, etc.)
+                    if 'entity' in result:
+                        entity = result['entity']
+                        if isinstance(entity, dict):
+                            result.update(entity)
+                        elif hasattr(entity, 'to_dict'):
+                            result.update(entity.to_dict())
+                        # Remove the nested entity reference to avoid duplication
+                        del result['entity']
+
+                    results.append(result)
+
+                logger.debug(f"Unpacked {len(hit.ids)} hits from HybridHits")
+                continue  # Skip to next hit
+
+            # DEBUG: Log hit type and structure to understand pymilvus Hit object
+            logger.debug(f"Hit type: {type(hit)}")
+            logger.debug(f"Hit public attributes: {[x for x in dir(hit) if not x.startswith('_')]}")
+            if hasattr(hit, '__dict__'):
+                logger.debug(f"Hit.__dict__ keys: {list(hit.__dict__.keys())}")
+            if hasattr(hit, 'entity'):
+                logger.debug(f"Hit.entity exists: type={type(hit.entity)}, value={hit.entity}")
+
             # Handle both dict hits and pymilvus H class objects
             if isinstance(hit, dict):
                 # Standard dictionary hit
@@ -355,8 +409,22 @@ class MilvusService:
                 for key in ["id", "distance", "score"]:
                     if key in hit and key not in result:
                         result[key] = hit[key]
+                # Copy entity fields if present (for dict hits with nested entity)
+                if 'entity' in hit and isinstance(hit['entity'], dict):
+                    result.update(hit['entity'])
+            elif hasattr(hit, 'entity'):
+                # pymilvus Hit object with entity attribute
+                # entity contains all dynamic fields (contents, doc_id, title, etc.)
+                if isinstance(hit.entity, dict):
+                    result = {**hit.entity}
+                else:
+                    result = {}
+                # Add standard fields
+                for key in ["id", "distance", "score"]:
+                    if hasattr(hit, key):
+                        result[key] = getattr(hit, key, None)
             elif hasattr(hit, '_dict_'):
-                # pymilvus H class object
+                # pymilvus H class object (fallback)
                 entity = hit._dict_
                 result = {**entity}
                 # Try to extract common fields from H class
@@ -364,7 +432,7 @@ class MilvusService:
                     if hasattr(hit, key):
                         result[key] = getattr(hit, key, None)
             elif hasattr(hit, '__dict__'):
-                # Alternative pymilvus H class object
+                # Alternative pymilvus H class object (fallback)
                 entity = hit.__dict__
                 result = {**entity}
                 # Try to extract common fields
@@ -375,6 +443,11 @@ class MilvusService:
                 # Unknown hit type, try minimal extraction
                 logger.debug(f"Unknown hit type: {type(hit)}, skipping")
                 continue
+
+            # DEBUG: Log what we got
+            logger.debug(f"Processed result keys: {list(result.keys())}")
+            logger.debug(f"Result has 'contents': {'contents' in result}")
+            logger.debug(f"Result has 'doc_id': {'doc_id' in result}")
 
             # Ensure required fields exist
             if 'id' not in result:

@@ -207,11 +207,30 @@ class QAService:
         Returns:
             Formatted context string
         """
+        logger.debug(f"Building context from {len(retrieved)} chunks")
+
         context_parts = []
         for i, chunk in enumerate(retrieved, 1):
+            # Debug: log available fields
+            logger.debug(f"Chunk {i} keys: {list(chunk.keys())}")
+
             title = chunk.get('title', 'Unknown')
             doc_id = chunk.get('doc_id', 'Unknown')
-            content = chunk.get('contents', '')
+            # Try multiple possible field names for content
+            content = (
+                chunk.get('contents') or
+                chunk.get('content') or
+                chunk.get('text') or
+                ''
+            )
+
+            # Debug: log content length
+            logger.debug(f"Chunk {i} contents length: {len(str(content))}, doc_id: {doc_id}")
+
+            # If content is still empty, warn and skip
+            if not content:
+                logger.warning(f"Chunk {i} has empty content, doc_id: {doc_id}")
+                continue
 
             context_parts.append(
                 f"[文档 {i}]\n"
@@ -220,7 +239,9 @@ class QAService:
                 f"内容: {content}"
             )
 
-        return "\n\n".join(context_parts)
+        result = "\n\n".join(context_parts)
+        logger.debug(f"Built context with {len(context_parts)} valid chunks, total length: {len(result)}")
+        return result
 
     def _build_messages(
         self,
