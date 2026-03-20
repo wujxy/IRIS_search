@@ -43,6 +43,8 @@ IRIS (Intelligent Research Information System) 是一个自动化的人工智能
 | Specific 模式 | 使用 Milvus 元数据过滤，精确检索单篇论文 |
 | 多轮对话 | 原生支持对话会话管理 |
 | 异步架构 | 基于 async/await，性能更佳 |
+| Web 界面 | 基于 FastAPI 的文献浏览界面 |
+| 实时问答 | 浏览器内 AI 问答交互 |
 
 ### 1.3 技术栈
 
@@ -58,6 +60,10 @@ IRIS (Intelligent Research Information System) 是一个自动化的人工智能
 - **chonkie** - 文档切分库（支持语义切分）
 - **pymupdf** - PDF 解析库
 - **SQLite** - 论文数据库（存储元数据和 Q&A 结果）
+- **FastAPI** - Web 框架
+- **Uvicorn** - ASGI 服务器
+- **Jinja2** - 模板引擎
+- **MathJax** - LaTeX 公式渲染
 
 ### 1.4 架构优势
 
@@ -128,14 +134,26 @@ IRIS_search/
 │   │   ├── index_service.py      # 索引服务（使用基础设施）
 │   │   ├── qa_service.py         # QA 服务（使用 Retriever）
 │   │   └── prompt_templates.py   # Jinja2 提示模板
-│   └── services/               # 业务服务层（独立服务）
-│       ├── arxiv_service.py       # ArXiv 搜索服务
-│       ├── paper_service.py       # SQLite 论文数据库
-│       ├── email_service.py       # 邮件通知服务
-│       └── deploy_service.py      # 基础设施部署服务
+│   ├── services/               # 业务服务层（独立服务）
+│   │   ├── arxiv_service.py       # ArXiv 搜索服务
+│   │   ├── paper_service.py       # SQLite 论文数据库
+│   │   ├── email_service.py       # 邮件通知服务
+│   │   └── deploy_service.py      # 基础设施部署服务
+│   └── web/                    # Web 展示模块
+│       ├── app.py                # FastAPI 主应用
+│       ├── dependencies.py       # 依赖注入
+│       ├── template_config.py    # 模板配置
+│       ├── models.py             # Pydantic 数据模型
+│       ├── routers/              # 路由模块
+│       │   ├── web_routes.py     # 网页路由
+│       │   ├── api_routes.py     # API 路由
+│       │   └── qa_routes.py      # QA 路由
+│       ├── templates/            # Jinja2 模板
+│       └── static/               # 静态资源
 ├── scripts/                    # 运行脚本
 │   ├── run_update_cycle.py     # 主编排脚本
-│   └── iris_query.py          # 查询接口
+│   ├── iris_query.py          # 查询接口
+│   └── run_web.py             # Web 服务启动脚本
 └── utils/                      # 工具函数
     └── helpers.py              # 辅助函数
 ```
@@ -383,6 +401,19 @@ email:
   smtp_port: 587
   password: your_app_password
   receiver: your_email@gmail.com
+```
+
+**Gmail 用户注意**: 需要使用应用专用密码，而非账号密码。
+生成地址: https://myaccount.google.com/apppasswords
+
+#### 4.1.13 Web 配置 (web)
+
+```yaml
+web:
+  host: 127.0.0.1   # Web 服务监听地址
+  port: 8000        # Web 服务端口
+  reload: true      # 开发模式自动重载
+  log_level: info   # 日志级别
 ```
 
 **Gmail 用户注意**: 需要使用应用专用密码，而非账号密码。
@@ -658,6 +689,111 @@ python src/scripts/iris_query.py "问题"
 
 # Specific 模式
 python src/scripts/iris_query.py -m specific --paper-id 2401.12345 "问题"
+```
+
+### 6.4 Web 界面使用
+
+#### 6.4.1 启动 Web 服务
+
+```bash
+cd /home/NagaiYoru/LLM_tuning/IRIS_search
+source .venv/bin/activate
+
+# 启动 Web 服务
+python scripts/run_web.py
+```
+
+输出示例：
+```
+[INFO] Starting IRIS Web Server on 127.0.0.1:8000
+[INFO] IRIS Web application starting up...
+```
+
+访问地址: `http://127.0.0.1:8000`
+
+**注意**: 使用 QA 功能前需要确保 vLLM 服务和 Milvus 正在运行。
+
+#### 6.4.2 文献列表页面
+
+**功能**:
+- 分页浏览（每页 10 篇）
+- 分类过滤（hep-ph, hep-ex, astro-ph 等）
+- 关键词搜索
+- 排序选项（最新、最早）
+
+**URL**: `http://127.0.0.1:8000/`
+
+**操作**:
+- 点击论文标题查看详情
+- 使用搜索框查找论文
+- 使用分类下拉框过滤
+
+#### 6.4.3 论文详情页面
+
+**功能**:
+- 完整元数据展示（标题、作者、摘要、分类）
+- PDF 下载链接（直接跳转 arXiv）
+- DOI 链接
+- LaTeX 公式渲染（MathJax）
+- **嵌入式聊天框**（Specific 模式 QA）
+
+**URL**: `http://127.0.0.1:8000/paper/{arxiv_id}`
+
+#### 6.4.4 AI 问答功能
+
+**Global 模式**（全局检索）:
+- **位置**: 右下角浮动聊天按钮
+- **功能**: 搜索整个文献数据库
+- **使用**: 点击按钮展开聊天框，输入问题
+
+**Specific 模式**（单篇论文检索）:
+- **位置**: 论文详情页嵌入式聊天框
+- **功能**: 仅针对当前论文内容检索
+- **使用**: 在详情页底部聊天框输入问题
+
+**多轮对话**:
+- 自动保持会话上下文
+- 支持追问和深入讨论
+- 会话自动管理
+
+#### 6.4.5 API 端点（程序化访问）
+
+**文献 API**:
+- `GET /api/papers` - 获取论文列表（分页）
+- `GET /api/papers/{arxiv_id}` - 获取论文详情
+- `GET /api/categories` - 获取分类列表
+- `POST /api/search` - 搜索论文
+
+**QA API**:
+- `POST /api/qa/conversation` - 创建对话会话
+- `POST /api/qa/conversation/{session_id}` - 发送问题
+- `GET /api/qa/conversation/{session_id}` - 获取历史
+- `DELETE /api/qa/conversation/{session_id}` - 删除会话
+- `POST /api/qa/query` - 单次查询（无状态）
+
+**API 文档**: `http://127.0.0.1:8000/docs` (FastAPI 自动生成)
+
+**API 使用示例**:
+
+```bash
+# 获取论文列表
+curl http://localhost:8000/api/papers?page=1&per_page=10
+
+# 获取特定论文详情
+curl http://localhost:8000/api/papers/2401.12345
+
+# 搜索论文
+curl -X POST http://localhost:8000/api/search \
+  -H "Content-Type: application/json" \
+  -d '{"keyword": "neutrino", "category": "hep-ph"}'
+
+# 创建 QA 会话
+curl -X POST http://localhost:8000/api/qa/conversation
+
+# 在会话中提问
+curl -X POST http://localhost:8000/api/qa/conversation/{session_id} \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What is the main method?", "mode": "global", "top_k": 5}'
 ```
 
 ---
@@ -1266,8 +1402,10 @@ ls -td update_* | tail -n +6 | xargs rm -rf
 | `python scripts/iris_query.py "问题"` | 单次查询 |
 | `python scripts/iris_query.py -l` | 列出更新 |
 | `python scripts/iris_query.py -m specific --paper-id XXXXX "问题"` | Specific 模式查询 |
+| `python scripts/run_web.py` | 启动 Web 服务 |
 | `bash vllm_serve_qwen_embed.sh` | 手动启动索引模型 |
 | `bash vllm_serve_llama.sh` | 手动启动 QA 模型 |
+| 访问 `http://localhost:8000/docs` | 查看 Web API 文档 |
 
 ### A.2 配置参数速查
 
@@ -1289,6 +1427,10 @@ ls -td update_* | tail -n +6 | xargs rm -rf
 | `qa.max_model_len` | 8192 | QA 模型最大长度 |
 | `qa.gpu_memory_utilization` | 0.85 | QA 模型 GPU 内存利用率 |
 | `filtering.exclude_reviews` | true | 是否排除综述论文 |
+| `web.host` | 127.0.0.1 | Web 服务监听地址 |
+| `web.port` | 8000 | Web 服务端口 |
+| `web.reload` | true | 开发模式自动重载 |
+| `web.log_level` | info | Web 服务日志级别 |
 
 ### A.3 相关链接
 
