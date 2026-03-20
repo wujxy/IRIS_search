@@ -65,3 +65,39 @@ class StatsResponse(BaseModel):
     total_papers: int
     categories: List[CategoryResponse]
     latest_paper: Optional[PaperResponse] = None
+
+
+# ==================== QA Models ====================
+
+class Message(BaseModel):
+    """Chat message."""
+    role: str  # "user", "assistant", "system"
+    content: str
+
+
+class QARequest(BaseModel):
+    """QA query request."""
+    question: str = Field(..., min_length=1)
+    mode: str = Field("global", pattern="^(global|specific)$")
+    paper_id: Optional[str] = None
+    top_k: int = Field(5, ge=1, le=20)
+
+
+class QAResponse(BaseModel):
+    """QA query response."""
+    answer: str
+    session_id: str
+
+
+class ConversationCreateResponse(BaseModel):
+    """Response when creating a new conversation."""
+    session_id: str
+    message: str = "New conversation created"
+
+
+class ConversationHistoryResponse(BaseModel):
+    """Conversation history response."""
+    session_id: str
+    messages: List[Message]
+    mode: str = "global"
+    paper_id: Optional[str] = None

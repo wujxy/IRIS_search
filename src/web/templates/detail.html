@@ -78,6 +78,14 @@
                 {% endif %}
             </table>
         </section>
+
+        <!-- Interactive QA Section -->
+        <section class="paper-qa-interactive">
+            <h2>Ask Questions About This Paper</h2>
+            <div class="qa-chat-embedded" data-mode="specific" data-paper-id="{{ paper.paper_id }}">
+                <!-- Chat interface will be rendered here -->
+            </div>
+        </section>
     </article>
 </div>
 {% endblock %}

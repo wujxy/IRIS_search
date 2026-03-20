@@ -10,7 +10,7 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 import logging
 
-from web.routers import web_routes, api_routes
+from web.routers import web_routes, api_routes, qa_routes
 from web.template_config import templates
 
 logger = logging.getLogger(__name__)
@@ -30,6 +30,7 @@ app.mount("/static", StaticFiles(directory="src/web/static"), name="static")
 # Include routers
 app.include_router(web_routes.router)
 app.include_router(api_routes.router)
+app.include_router(qa_routes.router)
 
 
 @app.get("/health")
