@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_search %}Search Results - IRIS{% else %}Papers - IRIS{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1>
+            {% if is_search %}
+                Search Results{% if search_query %}: "{{ search_query }}"{% endif %}
+                {% if search_count is defined %}({{ search_count }} results){% endif %}
+            {% else %}
+                Literature Browser
+            {% endif %}
+        </h1>
+    </div>
+
+    <div class="filters">
+        <form action="" method="get">
+            <div class="filter-group">
+                <label>Category:</label>
+                <select name="category" onchange="this.form.submit()">
+                    <option value="">All Categories</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.category }}" {% if current_category == cat.category %}selected{% endif %}>
+                        {{ cat.category }} ({{ cat.count }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            {% if search_query %}
+            <input type="hidden" name="q" value="{{ search_query }}">
+            {% endif %}
+
+            <div class="filter-group">
+                <label>Sort by:</label>
+                <select name="order_by" onchange="this.form.submit()">
+                    <option value="published" {% if order_by == 'published' %}selected{% endif %}>Published Date</option>
+                    <option value="title" {% if order_by == 'title' %}selected{% endif %}>Title</option>
+                </select>
+            </div>
+
+            {% if current_category %}
+            <a href="/" class="btn-clear">Clear Filters</a>
+            {% endif %}
+        </form>
+    </div>
+
+    {% if papers %}
+    <div class="paper-list">
+        {% for paper in papers %}
+        <div class="paper-card">
+            <h3 class="paper-title">
+                <a href="/paper/{{ paper.paper_id }}">{{ paper.title }}</a>
+            </h3>
+            <div class="paper-meta">
+                <span class="paper-authors">{{ paper.authors_list | author_list }}</span>
+                <span class="paper-date">{{ paper.published | format_date }}</span>
+                {% if paper.primary_category %}
+                <span class="paper-category">{{ paper.primary_category }}</span>
+                {% endif %}
+            </div>
+            {% if paper.summary_preview %}
+            <p class="paper-summary">{{ paper.summary_preview }}</p>
+            {% endif %}
+            {% if paper.journal_ref %}
+            <div class="paper-journal">{{ paper.journal_ref }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if not is_search %}
+    <div class="pagination">
+        {% if pagination.has_prev %}
+        <a href="?page={{ pagination.page - 1 }}{% if current_category %}&category={{ current_category }}{% endif %}" class="btn-prev">
+            &larr; Previous
+        </a>
+        {% endif %}
+
+        <span class="page-info">
+            Page {{ pagination.page }} of {{ pagination.total_pages }}
+            ({{ pagination.total }} papers)
+        </span>
+
+        {% if pagination.has_next %}
+        <a href="?page={{ pagination.page + 1 }}{% if current_category %}&category={{ current_category }}{% endif %}" class="btn-next">
+            Next &rarr;
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="no-results">
+        <p>No papers found.</p>
+        {% if current_category or search_query %}
+        <a href="/">Clear filters</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

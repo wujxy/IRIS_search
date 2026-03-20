@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}{{ paper.title }} - IRIS{% endblock %}
+
+{% block content %}
+<div class="container">
+    <article class="paper-detail">
+        <nav class="breadcrumb">
+            <a href="/">&larr; Back to Papers</a>
+        </nav>
+
+        <header class="paper-header">
+            <h1 class="paper-title">{{ paper.title }}</h1>
+            <div class="paper-meta">
+                <div class="paper-authors">
+                    {% for author in paper.authors_list %}
+                    <span class="author">{{ author }}</span>{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                </div>
+                <div class="paper-date">{{ paper.published | format_date }}</div>
+                {% if paper.journal_ref %}
+                <div class="paper-journal">{{ paper.journal_ref }}</div>
+                {% endif %}
+            </div>
+        </header>
+
+        {% if paper.summary %}
+        <section class="paper-abstract">
+            <h2>Abstract</h2>
+            <p>{{ paper.summary }}</p>
+        </section>
+        {% endif %}
+
+        {% if paper.doi %}
+        <section class="paper-doi">
+            <strong>DOI:</strong>
+            <a href="https://doi.org/{{ paper.doi }}" target="_blank">{{ paper.doi }}</a>
+        </section>
+        {% endif %}
+
+        {% if paper.categories_list %}
+        <section class="paper-categories">
+            <strong>Categories:</strong>
+            {% for cat in paper.categories_list %}
+            <span class="category-tag">{{ cat }}</span>
+            {% endfor %}
+        </section>
+        {% endif %}
+
+        {% if qa_fields %}
+        <section class="paper-qa">
+            <h2>Key Insights (AI-Generated)</h2>
+            {% for qa in qa_fields %}
+            <div class="qa-item">
+                <h3>{{ qa.q }}</h3>
+                <p>{{ qa.a }}</p>
+            </div>
+            {% endfor %}
+        </section>
+        {% endif %}
+
+        <section class="paper-actions">
+            <a href="https://arxiv.org/abs/{{ paper.paper_id }}" class="btn-primary" target="_blank">View on arXiv</a>
+            <a href="https://arxiv.org/pdf/{{ paper.paper_id }}.pdf" class="btn-primary" target="_blank">Download PDF</a>
+            {% if paper.doi %}
+            <a href="https://doi.org/{{ paper.doi }}" class="btn-secondary" target="_blank">DOI Link</a>
+            {% endif %}
+            <a href="/" class="btn-secondary">Back to List</a>
+        </section>
+
+        <section class="paper-metadata">
+            <h3>Metadata</h3>
+            <table class="metadata-table">
+                <tr><td>arXiv ID:</td><td><a href="https://arxiv.org/abs/{{ paper.paper_id }}" target="_blank">{{ paper.paper_id }}</a></td></tr>
+                <tr><td>Primary Category:</td><td>{{ paper.primary_category or 'N/A' }}</td></tr>
+                {% if paper.updated %}
+                <tr><td>Last Updated:</td><td>{{ paper.updated | format_date }}</td></tr>
+                {% endif %}
+            </table>
+        </section>
+    </article>
+</div>
+{% endblock %}

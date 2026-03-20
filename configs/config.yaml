@@ -2,7 +2,8 @@
 # Intelligent Research Information System [IRIS]
 
 # ============================================================
-# IRIS Configuration
+# IRIS Configuration 
+# for iris_query.py， run_update_cycle.py, run_web.py
 # ============================================================
 
 update:
@@ -68,7 +69,7 @@ embedding:
 reranker:
   model_path: /home/NagaiYoru/LLM_model/bge-reranker-v2-m3
   batch_size: 16
-  device: cpu  # Or "cuda:0" for GPU
+  device: cpu  # cpu Or cuda:0
   enabled: false  # Set to true to enable reranking
 
 # Document processing configuration
@@ -120,3 +121,13 @@ duplicate_detection:
 logging:
   level: INFO  # Options: DEBUG, INFO, WARNING, ERROR
   log_dir: ./logs
+
+# Web interface configuration
+web:
+  host: "127.0.0.1"
+  port: 8000
+  reload: true
+  log_level: "info"
+  pagination:
+    default_per_page: 10
+    max_per_page: 100
