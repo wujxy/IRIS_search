@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 # Add src to path for new structure
 sys.path.insert(1, str(Path(__file__).parent.parent / "src"))
 
-from utils.helpers import load_config, setup_logging, get_latest_update_folder, get_master_chunks_path
+from utils.helpers import load_config, setup_logging
 from services.deploy_service import DeployService
 from services.paper_service import PaperService
 
@@ -39,43 +39,22 @@ def find_chunks_file(database_root: str, update_folder: str = None, use_master: 
     """
     Find chunks file from the IRIS database.
 
+    NOTE: chunks.jsonl is deprecated and not used for retrieval.
+    Milvus is used for all retrieval operations. This function
+    returns None as the chunks file is no longer needed.
+
     Args:
-        database_root: Path to IRIS database root
-        update_folder: Specific update folder to use (optional)
-        use_master: Use master collection chunks by default (optional, default: True)
+        database_root: Path to IRIS database root (unused)
+        update_folder: Specific update folder (unused)
+        use_master: Use master collection (unused)
 
     Returns:
-        Path to chunks.jsonl file, or None if not found
+        None (chunks file is not used)
     """
-    database_root = Path(database_root)
-
-    if update_folder:
-        # Backward compatibility: use update folder if specified
-        folder_path = database_root / update_folder
-        index_storage = folder_path / "index_storage"
-        chunks_file = index_storage / "chunks.jsonl"
-    elif use_master:
-        # Default: use master collection chunks
-        chunks_file = get_master_chunks_path(database_root)
-        logger.info(f"Using master collection chunks: {chunks_file}")
-    else:
-        # Legacy: use latest update folder
-        folder_path = get_latest_update_folder(database_root)
-        if folder_path is None:
-            logger.error("No update folders found in database")
-            logger.info(f"Database root: {database_root}")
-            return None
-        logger.info(f"Using update folder: {folder_path}")
-        index_storage = folder_path / "index_storage"
-        chunks_file = index_storage / "chunks.jsonl"
-
-    if not chunks_file.exists():
-        logger.error(f"Chunks file not found: {chunks_file}")
-        return None
-
-    logger.info(f"Chunks file: {chunks_file}")
-
-    return chunks_file
+    # The current IRIS implementation uses Milvus for all retrieval
+    # chunks.jsonl files are no longer needed for querying
+    logger.debug("Chunks file lookup skipped (using Milvus for retrieval)")
+    return None
 
 
 def list_papers_mode(paper_service: PaperService, limit: int = 20, category: str = None):
@@ -104,7 +83,7 @@ def list_papers_mode(paper_service: PaperService, limit: int = 20, category: str
         return
 
     # Display papers
-    print(f"\n{ID:<12} {Date:<12} {Category:<15} {Title:<30}")
+    print(f"\n{'ID':<12} {'Date':<12} {'Category':<15} {'Title':<30}")
     print("-" * 80)
 
     for paper in papers:
@@ -481,19 +460,8 @@ Examples:
         print(f"\nFound {len(papers)} papers")
         return
 
-    # Find chunks file
-    if args.chunks:
-        chunks_path = Path(args.chunks)
-    else:
-        # Auto-detect from database
-        chunks_path = find_chunks_file(database_root, args.update)
-
-    if chunks_path is None:
-        logger.error("Could not find chunks file")
-        sys.exit(1)
-
-    # Get collection name - use master collection from config if not specified
-    collection_name = args.collection or config["milvus"]["master_collection"]
+    # Get collection name - use collection_name from config (same as run_update_cycle)
+    collection_name = args.collection or config["milvus"]["collection_name"]
     logger.info(f"Using collection: {collection_name}")
 
     # Initialize new independent services
@@ -529,8 +497,8 @@ Examples:
     # Initialize QA service
     qa_service = QAService(
         retriever=retriever,
-        generation_base_url=config["models"]["vllm"]["base_url"],
-        generation_model=config["models"]["vllm"]["served_model_name"],
+        base_url=config["qa"]["base_url"],
+        model_name=config["qa"]["model_name"],
         system_prompt=config["qa"]["system_prompt"],
         temperature=config["qa"].get("temperature", 0.7),
         max_tokens=config["qa"].get("max_tokens", 2048)

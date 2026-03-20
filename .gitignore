@@ -2,3 +2,5 @@
 logs/
 *.pyc
 __pycache__/
+.claude/
+test.log

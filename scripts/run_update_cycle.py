@@ -29,6 +29,7 @@ from core.index_service import create_index_service_from_config, IndexService
 from core.qa_service import create_qa_service_from_config, QAService
 from services.arxiv_service import ArxivService
 from services.email_service import EmailService
+from services.paper_service import PaperService
 from services.deploy_service import DeployService
 from utils.helpers import (
     load_config,
@@ -36,7 +37,6 @@ from utils.helpers import (
     setup_logging,
     create_update_folder,
     save_metadata,
-    load_all_paper_entries,
     save_update_log,
     save_summary_log,
     save_knowledge_log
@@ -197,10 +197,11 @@ def run_update_cycle(config: dict):
         update_folder = create_update_folder(config["storage"]["database_root"])
         logger.info(f"Update folder: {update_folder}")
 
-        # Step 2: Load existing paper entries for duplicate detection
-        logger.info("\n[Step 2] Loading existing paper entries...")
-        existing_ids = load_all_paper_entries(config["storage"]["database_root"])
-        logger.info(f"Found {len(existing_ids)} existing papers in database")
+        # Step 2: Initialize PaperService and load existing papers from SQLite
+        logger.info("\n[Step 2] Initializing PaperService and loading existing papers...")
+        paper_service = PaperService(config["storage"]["paper_db_path"])
+        existing_ids = paper_service.get_all_entry_ids()
+        logger.info(f"Found {len(existing_ids)} existing papers in SQLite database")
 
         # Step 3: Initialize arXiv service
         logger.info("\n[Step 3] Initializing arXiv service...")
@@ -219,7 +220,8 @@ def run_update_cycle(config: dict):
         pdf_dir = update_folder / "pdfs"
         management_result = arxiv_service.manage_papers(
             save_dir=pdf_dir,
-            target_count=arxiv_config["max_results_per_keyword"]
+            target_count=arxiv_config["max_results_per_keyword"],
+            existing_ids=existing_ids  # Pass SQLite-derived IDs
         )
 
         all_papers = management_result["papers"]
@@ -231,7 +233,7 @@ def run_update_cycle(config: dict):
         save_metadata(all_papers, update_folder / "metadata.json")
 
         # Step 6: Generate update log
-        logger.info("\n[Step 4] Generating update log...")
+        logger.info("\n[Step 6] Generating update log...")
         metadata = {
             "timestamp": datetime.now().isoformat(),
             "total_papers": len(all_papers),
@@ -245,87 +247,113 @@ def run_update_cycle(config: dict):
         update_log = generate_update_log(metadata, update_folder)
         save_update_log(update_folder, update_log)
 
-        # Step 5: Start infrastructure (Milvus + vLLM index model + vLLM QA model)
-        logger.info("\n[Step 5] Starting infrastructure...")
+        # Step 7: Check if there are new papers before starting infrastructure
+        if not new_papers:
+            logger.info("No new papers found. Skipping indexing, QA, and infrastructure startup.")
+
+            logger.info("\n" + "=" * 60)
+            logger.info("IRIS Update Cycle Completed (No new papers)")
+            logger.info("=" * 60)
+            logger.info(f"Update folder: {update_folder}")
+            return True
+
+        # Step 8: Start infrastructure ONLY if there are new papers
+        logger.info(f"\n[Step 8] Starting infrastructure for {len(new_papers)} new papers...")
         deploy_server = DeployService(config)
 
         if not deploy_server.start_infrastructure():
-            logger.error("Failed to start infrastructure")
+            logger.error("Failed to start infrastructure (Milvus or vLLM models)")
+            logger.error("Update cycle terminated due to infrastructure failure")
             return False
 
-        # Step 6: Build index if there are new papers
+        # Step 9: Build index with new papers
+        logger.info("\n[Step 9] Building index with new services...")
         papers_with_answers = []
-        if new_papers:
-            logger.info("\n[Step 6] Building index with new services...")
 
-            # 使用主集合进行增量索引
-            collection_name = config["milvus"]["collection_name"]
+        # 使用主集合进行增量索引
+        collection_name = config["milvus"]["collection_name"]
 
-            index_service = create_index_service_from_config(config)
+        index_service = create_index_service_from_config(config)
 
-            index_output_dir = update_folder / "index_storage"
+        index_output_dir = update_folder / "index_storage"
 
-            # overwrite=false 用于 Milvus 增量更新
-            success = asyncio.run(index_service.chunk_and_index(
-                pdf_dir=pdf_dir,
-                output_dir=index_output_dir,
-                collection_name=collection_name,
-                overwrite=False
+        # overwrite=false 用于 Milvus 增量更新
+        success = asyncio.run(index_service.chunk_and_index(
+            pdf_dir=pdf_dir,
+            output_dir=index_output_dir,
+            collection_name=collection_name,
+            overwrite=False
+        ))
+
+        if not success:
+            logger.error("Index build failed, stopping infrastructure and terminating")
+            deploy_server.stop_infrastructure()
+            return False
+
+        logger.info("Index created successfully")
+
+        # Step 10: QA 处理
+        logger.info("\n[Step 10] QA processing...")
+        qa_service = create_qa_service_from_config(config)
+
+        # Load questions
+        questions = load_questions(config["qa"]["question_set_path"])
+
+        # QA for each paper (using first 5 questions for summarization)
+        # 使用 specific 模式按 paper_id 过滤
+        for paper in new_papers:
+            paper_questions = questions[:5]  # Use first 5 questions
+            # 提取 arXiv ID 作为 paper_id
+            paper_id = paper["entry_id"].split('/')[-1]
+
+            answers = asyncio.run(qa_service.query_knowledge_base_with_mode(
+                questions=paper_questions,
+                mode="specific",
+                paper_id=paper_id
             ))
 
-            if success:
-                logger.info(f"Index created successfully")
+            # Map answers to question keys
+            answers_dict = {}
+            for idx, ans in enumerate(answers):
+                answers_dict[f"q{idx+1}"] = ans.get("answer", "")
 
-                # Step 7: QA 处理（vLLM 模型已在 Step 5 中同时启动）
-                logger.info("\n[Step 7] QA processing...")
-                qa_service = create_qa_service_from_config(config)
+            papers_with_answers.append({
+                "paper": paper,
+                "answers": answers_dict
+            })
+            logger.info(f"Generated summary for: {paper['title'][:50]}...")
 
-                # Load questions
-                questions = load_questions(config["qa"]["question_set_path"])
+        # Step 11: Generate summary and knowledge logs
+        if papers_with_answers:
+            logger.info("\n[Step 11] Generating summary and knowledge logs...")
+            summary_md = generate_summary_markdown(papers_with_answers)
+            knowledge_md = generate_knowledge_markdown(papers_with_answers)
 
-                # QA for each paper (using first 5 questions for summarization)
-                # 使用 specific 模式按 paper_id 过滤
-                for paper in new_papers:
-                    paper_questions = questions[:5]  # Use first 5 questions
-                    # 提取 arXiv ID 作为 paper_id
-                    paper_id = paper["entry_id"].split('/')[-1]
+            save_summary_log(update_folder, summary_md)
+            save_knowledge_log(update_folder, knowledge_md)
 
-                    answers = asyncio.run(qa_service.query_knowledge_base_with_mode(
-                        questions=paper_questions,
-                        mode="specific",
-                        paper_id=paper_id
-                    ))
+            logger.info("Logs generated successfully")
 
-                    # Map answers to question keys
-                    answers_dict = {}
-                    for idx, ans in enumerate(answers):
-                        answers_dict[f"q{idx+1}"] = ans.get("answer", "")
+            # Step 11.5: Save new papers with Q&A to SQLite database
+            logger.info(f"\n[Step 11.5] Saving {len(papers_with_answers)} new papers to database...")
+            for paper_data in papers_with_answers:
+                paper = paper_data["paper"]
+                answers = paper_data["answers"]
 
-                    papers_with_answers.append({
-                        "paper": paper,
-                        "answers": answers_dict
-                    })
-                    logger.info(f"Generated summary for: {paper['title'][:50]}...")
+                # Merge paper metadata with Q&A answers
+                paper_with_answers = {**paper, **answers}
 
-                # Step 8: Generate summary and knowledge logs
-                if papers_with_answers:
-                    logger.info("\n[Step 8] Generating summary and knowledge logs...")
-                    summary_md = generate_summary_markdown(papers_with_answers)
-                    knowledge_md = generate_knowledge_markdown(papers_with_answers)
-
-                    save_summary_log(update_folder, summary_md)
-                    save_knowledge_log(update_folder, knowledge_md)
-
-                    logger.info("Logs generated successfully")
+                if paper_service.add_paper(paper_with_answers):
+                    logger.debug(f"Saved to database: {paper['title'][:50]}...")
                 else:
-                    logger.warning("No papers with answers, skipping log generation")
-            else:
-                logger.error("Index build failed, skipping QA")
-        else:
-            logger.info("No new papers, skipping indexing and QA")
+                    logger.warning(f"Failed to save (duplicate): {paper['title'][:50]}...")
 
-        # Step 9: Send email notification
-        logger.info("\n[Step 9] Sending email notification...")
+            logger.info("Database update completed")
+        else:
+            logger.warning("No papers with answers, skipping log generation")
+
+        # Step 12: Send email notification
+        logger.info("\n[Step 12] Sending email notification...")
         if config["email"]["enabled"]:
             email_service = EmailService(
                 sender=config["email"]["sender"],
@@ -356,8 +384,8 @@ def run_update_cycle(config: dict):
         else:
             logger.info("Email notifications disabled in config")
 
-        # Step 9.5: Stop infrastructure
-        logger.info("\n[Step 9.5] Stopping infrastructure...")
+        # Step 13: Stop infrastructure
+        logger.info("\n[Step 13] Stopping infrastructure...")
         deploy_server.stop_infrastructure()
         logger.info("Infrastructure stopped successfully")
 

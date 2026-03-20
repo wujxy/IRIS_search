@@ -159,9 +159,10 @@ class VllmControl:
 
         if model_type == "index":
             # Use embedding configuration for index model
-            self.model_name = config["embedding"]["model_name"]
+            embed_config = config.get("embedding", {})
+            self.model_name = embed_config.get("model_name", "qwen3-embedding-0.6b")
             # Parse host and port from base_url
-            base_url = config["embedding"]["base_url"]
+            base_url = embed_config.get("base_url", "http://127.0.0.1:65503/v1")
             if "://" in base_url:
                 url_part = base_url.split("://")[1].split("/")[0]
                 if ":" in url_part:
@@ -174,11 +175,12 @@ class VllmControl:
                 self.host = "127.0.0.1"
                 self.port = 65503
             self.base_url = base_url
-            self.served_model_name = config["embedding"]["model_name"]
-            self.max_model_len = 4096
-            self.gpu_memory_utilization = 0.15
-            self.tensor_parallel_size = 1
-            self.enforce_eager = True
+            self.served_model_name = self.model_name
+            # Read parameters from config
+            self.max_model_len = embed_config.get("max_model_len", 4096)
+            self.gpu_memory_utilization = embed_config.get("gpu_memory_utilization", 0.15)
+            self.tensor_parallel_size = embed_config.get("tensor_parallel_size", 1)
+            self.enforce_eager = embed_config.get("enforce_eager", True)
         else:  # qa
             # Use qa.base_url configuration for qa model
             qa_config = config.get("qa", {})
@@ -227,7 +229,7 @@ class VllmControl:
         Returns:
             True if service is ready, False otherwise
         """
-        health_url = self.base_url.rstrip("/").replace("/v1", "") + "/v1/models"
+        health_url = self.base_url.rstrip("/") + "/models"
 
         logger.info(f"Checking vLLM {self.model_type} service at {health_url}...")
 
@@ -352,10 +354,11 @@ class DeployService:
         Start infrastructure: Milvus + vLLM (index model and QA model simultaneously).
 
         Returns:
-            True if successful, False otherwise
+            True if successful, False otherwise (terminates update cycle on failure)
         """
         # Check and start Milvus
         if not self.milvus_control.search():
+            logger.info("Starting Milvus container...")
             if not self.milvus_control.start():
                 logger.error("Failed to start Milvus")
                 return False
@@ -364,18 +367,33 @@ class DeployService:
         logger.info("Waiting for Milvus to be ready...")
         time.sleep(10)
 
-        # Start index model and QA model simultaneously
-        logger.info("Starting vLLM models...")
-
-        if not self.index_vllm.search(timeout=5):
+        # Start index model (embedding)
+        logger.info(f"Checking index model (embedding) at {self.index_vllm.base_url}")
+        if not self.index_vllm.search(timeout=10):
+            logger.warning("Index model not available, starting...")
             if not self.index_vllm.start():
                 logger.error("Failed to start index vLLM")
                 return False
+            # Wait for model to be ready
+            if not self.index_vllm.search(timeout=60):
+                logger.error("Index model failed to become ready after startup")
+                return False
+        else:
+            logger.info("Index model already running")
 
-        if not self.qa_vllm.search(timeout=5):
+        # Start QA model
+        logger.info(f"Checking QA model at {self.qa_vllm.base_url}")
+        if not self.qa_vllm.search(timeout=10):
+            logger.warning("QA model not available, starting...")
             if not self.qa_vllm.start():
                 logger.error("Failed to start QA vLLM")
                 return False
+            # Wait for model to be ready
+            if not self.qa_vllm.search(timeout=60):
+                logger.error("QA model failed to become ready after startup")
+                return False
+        else:
+            logger.info("QA model already running")
 
         logger.info("Infrastructure started successfully")
         return True

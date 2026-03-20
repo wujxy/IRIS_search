@@ -66,7 +66,12 @@ class PaperService:
                     pdf_url TEXT,
                     pdf_path TEXT,
                     update_folder TEXT NOT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    q1 TEXT,
+                    q2 TEXT,
+                    q3 TEXT,
+                    q4 TEXT,
+                    q5 TEXT
                 )
             """)
 
@@ -88,14 +93,52 @@ class PaperService:
             """)
 
             conn.commit()
+
+            # Migrate: Add Q&A columns if they don't exist (for existing databases)
+            self._migrate_qa_columns(cursor)
+
+            conn.commit()
             logger.info("Database tables and indexes initialized")
+
+    def _migrate_qa_columns(self, cursor: sqlite3.Cursor):
+        """
+        Add Q&A columns to existing database if they don't exist.
+
+        Args:
+            cursor: Database cursor
+        """
+        # Get existing columns
+        cursor.execute("PRAGMA table_info(papers)")
+        existing_columns = {row[1] for row in cursor.fetchall()}
+
+        # Add Q&A columns if they don't exist
+        qa_columns = ['q1', 'q2', 'q3', 'q4', 'q5']
+        for col in qa_columns:
+            if col not in existing_columns:
+                try:
+                    cursor.execute(f"ALTER TABLE papers ADD COLUMN {col} TEXT")
+                    logger.info(f"Added column: {col}")
+                except sqlite3.OperationalError as e:
+                    logger.warning(f"Could not add column {col}: {e}")
+
+    def get_all_entry_ids(self) -> set:
+        """
+        Get all entry_ids from the database for deduplication.
+
+        Returns:
+            Set of all existing entry_ids
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT entry_id FROM papers")
+            return {row[0] for row in cursor.fetchall()}
 
     def add_paper(self, paper: Dict[str, Any]) -> bool:
         """
         Add a single paper to database.
 
         Args:
-            paper: Dictionary containing paper metadata
+            paper: Dictionary containing paper metadata and optional Q&A answers (q1-q5)
 
         Returns:
             True if added successfully, False if duplicate
@@ -112,8 +155,9 @@ class PaperService:
                     INSERT INTO papers (
                         entry_id, paper_id, title, authors, published, updated,
                         summary, comment, journal_ref, doi, primary_category,
-                        categories, status, download_status, pdf_url, pdf_path, update_folder
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        categories, status, download_status, pdf_url, pdf_path, update_folder,
+                        q1, q2, q3, q4, q5
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
                     entry_id,
                     paper_id,
@@ -131,7 +175,13 @@ class PaperService:
                     paper.get('download_status'),
                     paper.get('pdf_url'),
                     paper.get('pdf_path'),
-                    paper.get('update_folder', '')
+                    paper.get('update_folder', ''),
+                    # Q&A answers (may be None for papers without QA)
+                    paper.get('q1'),
+                    paper.get('q2'),
+                    paper.get('q3'),
+                    paper.get('q4'),
+                    paper.get('q5')
                 ))
 
                 conn.commit()

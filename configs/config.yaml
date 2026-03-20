@@ -18,7 +18,7 @@ arxiv:
     - sno
     - kamland
     - borexino
-  max_results_per_keyword: 1
+  max_results_per_keyword: 2
   sort_by: SubmittedDate  # Options: SubmittedDate, LastUpdatedDate, Relevance
 
 storage:
@@ -59,6 +59,10 @@ embedding:
   model_name: qwen3-embedding-0.6b
   batch_size: 32
   enabled: true
+  max_model_len: 4096
+  gpu_memory_utilization: 0.15
+  tensor_parallel_size: 1
+  enforce_eager: true
 
 # Reranker service configuration
 reranker:

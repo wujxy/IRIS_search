@@ -50,12 +50,14 @@ IRIS (Intelligent Research Information System) 是一个自动化的人工智能
 - **arxiv** - arXiv API 客户端
 - **独立服务架构** - 不依赖 UltraRAG，直接调用底层 API
 - **Qwen3-Embedding-0.6B** - 嵌入模型（生成向量表示）
-- **Llama-3-2-3B-Instruct** - 生成模型（用于摘要和问答）
+- **Llama-3.2-3B-Instruct** - 生成模型（用于摘要和问答）
+- **llama3-3b-instruct** - vLLM 服务名（用于 API 调用）
 - **Milvus** - 向量数据库（支持增量索引和元数据过滤）
 - **Docker** - Milvus 容器部署
 - **vLLM** - LLM 推理服务（OpenAI 兼容 API）
 - **chonkie** - 文档切分库（支持语义切分）
 - **pymupdf** - PDF 解析库
+- **SQLite** - 论文数据库（存储元数据和 Q&A 结果）
 
 ### 1.4 架构优势
 
@@ -141,18 +143,20 @@ IRIS_search/
 ### 2.3 数据流
 
 1. **搜索阶段**: arXiv 服务搜索论文 → 获取元数据
-2. **过滤阶段**: 过滤评论文章 → 检测重复 → 下载 PDF（失败重试机制）
-3. **基础设施启动**: 启动 Milvus → 启动索引模型 vLLM → 启动 QA 模型 vLLM
-4. **索引阶段**:
+2. **过滤阶段**: 过滤评论文章 → SQLite 数据库查重 → 下载 PDF（失败重试机制）
+3. **新论文检测**: 检查是否有新论文
+4. **基础设施启动**（仅在有新论文时）: 启动 Milvus → 启动索引模型 vLLM → 启动 QA 模型 vLLM
+5. **索引阶段**:
    ```
    PDF → DocumentProcessor.parse_pdf()
        → DocumentProcessor.chunk_text()
        → EmbeddingService.encode() [async]
        → MilvusService.insert() [with metadata]
    ```
-5. **摘要阶段**: Llama3B 模型 → 生成摘要 → 提取知识点
-6. **通知阶段**: 邮件服务 → 发送更新通知
-7. **基础设施停止**: 停止 vLLM 模型 → 停止 Milvus
+6. **QA 阶段**: Specific 模式检索 → Llama3B 模型生成答案 → 提取知识点
+7. **数据库保存**: 新论文 + Q&A 结果保存到 SQLite 数据库
+8. **通知阶段**: 邮件服务 → 发送更新通知
+9. **基础设施停止**: 停止 vLLM 模型 → 停止 Milvus
 
 ### 2.4 检索流程
 
@@ -287,9 +291,12 @@ milvus:
 embedding:
   base_url: http://127.0.0.1:65503/v1
   model_name: qwen3-embedding-0.6b
-  model_path: /home/NagaiYoru/LLM_model/Qwen3-Embedding-0.6B
   batch_size: 32
   enabled: true
+  max_model_len: 4096          # vLLM 模型最大长度
+  gpu_memory_utilization: 0.15  # GPU 内存利用率
+  tensor_parallel_size: 1       # 张量并行大小
+  enforce_eager: true           # 使用 eager 执行
 ```
 
 #### 4.1.6 Reranker 配置 (reranker)
@@ -308,24 +315,15 @@ reranker:
 models:
   embedding_model_path: /home/NagaiYoru/LLM_model/Qwen3-Embedding-0.6B
   reranker_model_path: /home/NagaiYoru/LLM_model/bge-reranker-v2-m3
-  llm_model_path: /home/NagaiYoru/LLM_model/llama-3-8B-Instruct
-  vllm:
-    # QA 模型配置（用于问答和摘要生成）
-    base_url: http://127.0.0.1:65504/v1
-    host: 127.0.0.1
-    port: 65504
-    served_model_name: llama3-3b-instruct
-    max_model_len: 8192
-    gpu_memory_utilization: 0.85
-    tensor_parallel_size: 1
-    enforce_eager: true
+  llm_model_path: /home/NagaiYoru/LLM_model/Llama-3.2-3B-Instruct
 ```
 
 **说明**：
+- `llm_model_path`: QA 模型的实际文件路径
+- `embedding_model_path`: 嵌入模型的实际文件路径
 - IRIS 使用两个独立的 vLLM 服务：
   - 索引模型（端口 65503）：专门用于文档嵌入，占用较少 GPU 资源
   - QA 模型（端口 65504）：用于问答和摘要生成，占用较多 GPU 资源
-- 两个模型可以同时运行，通过 `gpu_memory_utilization` 参数分配 GPU 资源
 
 #### 4.1.8 文档处理配置 (document)
 
@@ -350,14 +348,32 @@ retrieval:
 
 ```yaml
 qa:
-  system_prompt: "你是一个专业的文献问答助手。请使用中文回答问题，回答要准确、专业。"
+  model_name: llama3-3b-instruct  # vLLM API 调用的服务名
+  question_set_path: ./configs/questions.txt
+  system_prompt: "你是一个专业的文献库搜索总结智能助手。请基于提供的英文文献，忽略参考文献，使用中文回答问题，要求足够专业。"
   temperature: 0.7
   top_p: 0.8
   max_tokens: 2048
-  question_set_path: ./configs/questions.txt
+  # vLLM QA 模型配置
+  base_url: http://127.0.0.1:65504/v1
+  max_model_len: 8192
+  gpu_memory_utilization: 0.85
+  tensor_parallel_size: 1
+  enforce_eager: true
 ```
 
-#### 4.1.11 邮件配置 (email)
+#### 4.1.11 过滤配置 (filtering)
+
+```yaml
+filtering:
+  exclude_reviews: true  # 是否排除综述论文
+  review_keywords:       # 综论文论文的关键词列表
+    - review
+    - survey
+    - overview
+```
+
+#### 4.1.12 邮件配置 (email)
 
 ```yaml
 email:
@@ -429,27 +445,55 @@ nano configs/config.yaml  # 或使用您喜欢的编辑器
 #### 步骤 5: 运行首次更新
 
 ```bash
-# 激活虚拟环境
-source .venv/bin/activate
+# 方法 1: 使用 start_IRIS.sh 脚本（推荐）
+./start_IRIS.sh
 
-# 运行更新脚本
-python src/scripts/run_update_cycle.py
+# 方法 2: 直接运行 Python 脚本
+source .venv/bin/activate
+python scripts/run_update_cycle.py
 ```
 
-### 5.2 守护进程模式
+### 5.2 使用 start_IRIS.sh 脚本（推荐）
 
-要让 IRIS 在后台定期运行：
+IRIS 提供了便捷的启动脚本 `start_IRIS.sh`：
 
 ```bash
-# 方法 1: 使用 tmux/screen
+# 单次更新
+./start_IRIS.sh
+
+# 守护进程模式（每 2 小时更新一次）
+./start_IRIS.sh --daemon --interval 2
+
+# 自定义配置文件
+./start_IRIS.sh --config custom_config.yaml
+
+# 查看帮助
+./start_IRIS.sh --help
+```
+
+**start_IRIS.sh 功能**：
+- 自动检测 Python 虚拟环境
+- 支持守护进程模式（daemon mode）
+- 可配置更新间隔
+- 彩色日志输出
+- 优雅的错误处理
+
+### 5.3 其他运行方式
+
+#### 使用 tmux/screen
+
+如果需要手动管理后台进程：
+
+```bash
+# 创建新会话
 tmux new -s iris
 cd /home/NagaiYoru/LLM_tuning/IRIS_search
 source .venv/bin/activate
-python src/scripts/run_update_cycle.py
+python scripts/run_update_cycle.py
 # Ctrl+B, D 分离会话
 ```
 
-### 5.3 设置 Cron 任务（可选）
+### 5.4 设置 Cron 任务（可选）
 
 创建定时任务（每小时运行）：
 
@@ -910,8 +954,59 @@ class QAService:
 
 **核心功能**：
 - Milvus Docker 容器管理
-- vLLM 模型服务管理（索引 + QA 两个服务）
-- 健康检查和自动重启
+- vLLM 模型服务管理（索引 + QA 两个独立服务）
+- 健康检查和自动启动
+- **条件启动**: 仅在有新论文时启动基础设施
+- **错误处理**: 启动失败时终止更新周期
+
+**健康检查改进**：
+- 检测超时: 10 秒（从 5 秒增加）
+- 启动后验证: 60 秒等待模型完全初始化
+- 详细的日志输出，显示检测 URL 和状态
+
+**vLLM 服务参数**（从 config.yaml 读取）：
+
+索引模型 (embedding):
+- `max_model_len`: 4096
+- `gpu_memory_utilization`: 0.15
+- `tensor_parallel_size`: 1
+- `enforce_eager`: true
+
+QA 模型:
+- `max_model_len`: 8192
+- `gpu_memory_utilization`: 0.85
+- `tensor_parallel_size`: 1
+- `enforce_eager`: true
+
+**代码示例**：
+```python
+from services.deploy_service import DeployService
+
+deploy_server = DeployService(config)
+
+# 启动基础设施（仅在有新论文时调用）
+if deploy_server.start_infrastructure():
+    # 执行索引和 QA 任务
+    pass
+else:
+    # 启动失败，终止更新周期
+    logger.error("Infrastructure startup failed")
+
+# 停止基础设施
+deploy_server.stop_infrastructure()
+```
+
+#### 手动启动 vLLM 服务（可选）
+
+通常 DeployService 会自动管理 vLLM 服务，但也可以手动启动：
+
+```bash
+# 启动索引模型 (端口 65503)
+bash vllm_serve_qwen_embed.sh
+
+# 启动 QA 模型 (端口 65504)
+bash vllm_serve_llama.sh
+```
 
 ### 7.5 主编排器 (`scripts/run_update_cycle.py`)
 
@@ -922,25 +1017,28 @@ class QAService:
   ↓
 [Step 1] 创建更新文件夹
   ↓
-[Step 2] 加载现有论文条目（重复检测）
+[Step 2] 初始化 PaperService，从 SQLite 加载现有论文
   ↓
 [Step 3] 初始化 arXiv 服务
   ↓
-[Step 4] 搜索 arXiv
+[Step 4] 搜索 arXiv 并管理论文（过滤、下载）
   ↓
-[Step 5] 过滤论文（重复、评论）
+[Step 5] 保存元数据
   ↓
-[Step 6] 下载 PDF（含重试机制，跳过失败）
+[Step 6] 生成更新日志
   ↓
-[Step 7] 保存元数据
-  ↓
+[Step 7] 检查是否有新论文
+  ├─ 无新论文 → 跳过索引、QA 和基础设施启动 → 完成
+  └─ 有新论文 ↓
 [Step 8] 启动基础设施（Milvus + vLLM 索引 + vLLM QA）
   ↓
-[Step 9] 构建索引（使用新独立服务）
+[Step 9] 构建索引（增量更新）
   ↓
-[Step 10] QA 处理（使用新 QAService）
+[Step 10] QA 处理（Specific 模式）
   ↓
 [Step 11] 生成摘要和知识日志
+  ↓
+[Step 11.5] 保存新论文到 SQLite 数据库
   ↓
 [Step 12] 发送邮件通知
   ↓
@@ -948,6 +1046,11 @@ class QAService:
   ↓
 完成
 ```
+
+**关键特性**：
+- **智能基础设施启动**: 仅在有新论文时启动 Milvus 和 vLLM 服务，节省资源
+- **SQLite 数据库集成**: 自动保存新论文和 Q&A 结果到数据库
+- **错误终止**: 如果基础设施或索引构建失败，立即停止并清理
 
 ---
 
@@ -1155,26 +1258,37 @@ ls -td update_* | tail -n +6 | xargs rm -rf
 | 命令 | 描述 |
 |------|------|
 | `source .venv/bin/activate` | 激活虚拟环境 |
-| `python src/scripts/run_update_cycle.py` | 运行单次更新 |
-| `python src/scripts/iris_query.py -i` | 交互式查询 |
-| `python src/scripts/iris_query.py "问题"` | 单次查询 |
-| `python src/scripts/iris_query.py -l` | 列出更新 |
-| `python src/scripts/iris_query.py -m specific --paper-id XXXXX "问题"` | Specific 模式查询 |
-| `python test_new_services.py` | 测试新服务 |
+| `./start_IRIS.sh` | 运行单次更新（推荐） |
+| `./start_IRIS.sh --daemon` | 守护进程模式 |
+| `./start_IRIS.sh --interval 4` | 设置更新间隔为 4 小时 |
+| `python scripts/run_update_cycle.py` | 运行单次更新 |
+| `python scripts/iris_query.py -i` | 交互式查询 |
+| `python scripts/iris_query.py "问题"` | 单次查询 |
+| `python scripts/iris_query.py -l` | 列出更新 |
+| `python scripts/iris_query.py -m specific --paper-id XXXXX "问题"` | Specific 模式查询 |
+| `bash vllm_serve_qwen_embed.sh` | 手动启动索引模型 |
+| `bash vllm_serve_llama.sh` | 手动启动 QA 模型 |
 
 ### A.2 配置参数速查
 
 | 参数 | 默认值 | 说明 |
 |------|---------|------|
-| `update.interval_hours` | 2 | 更新间隔（小时） |
+| `update.interval_hours` | 1 | 更新间隔（小时） |
 | `arxiv.max_results_per_keyword` | 20 | 每关键词最大结果 |
 | `storage.database_root` | `~/research/IRIS_papers` | 数据库路径 |
+| `storage.paper_db_path` | `~/research/IRIS_papers/iris_papers.db` | SQLite 数据库路径 |
 | `milvus.uri` | `http://localhost:29901` | Milvus 服务地址 |
 | `milvus.collection_name` | `iris_papers` | Milvus 集合名称 |
-| `models.embedding_model_path` | Qwen3-Embedding-0.6B | 嵌入模型 |
-| `models.llm_model_path` | llama-3-8B-Instruct | 生成模型 |
+| `models.embedding_model_path` | Qwen3-Embedding-0.6B | 嵌入模型路径 |
+| `models.llm_model_path` | Llama-3.2-3B-Instruct | 生成模型路径 |
 | `embedding.base_url` | `http://127.0.0.1:65503/v1` | Embedding 服务地址 |
-| `models.vllm.base_url` | `http://127.0.0.1:65504/v1` | QA 服务地址 |
+| `embedding.max_model_len` | 4096 | 索引模型最大长度 |
+| `embedding.gpu_memory_utilization` | 0.15 | 索引模型 GPU 内存利用率 |
+| `qa.base_url` | `http://127.0.0.1:65504/v1` | QA 服务地址 |
+| `qa.model_name` | llama3-3b-instruct | QA 模型服务名 |
+| `qa.max_model_len` | 8192 | QA 模型最大长度 |
+| `qa.gpu_memory_utilization` | 0.85 | QA 模型 GPU 内存利用率 |
+| `filtering.exclude_reviews` | true | 是否排除综述论文 |
 
 ### A.3 相关链接
 

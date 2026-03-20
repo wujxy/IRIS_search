@@ -541,7 +541,8 @@ class ArxivService:
         self,
         save_dir: Path,
         target_count: int = None,
-        csv_dir: Path = None
+        csv_dir: Path = None,
+        existing_ids: set = None
     ) -> Dict[str, Any]:
         """
         Complete paper management workflow: search, filter, download, export.
@@ -550,6 +551,8 @@ class ArxivService:
             save_dir: Directory to save PDFs
             target_count: Target number of papers to process
             csv_dir: Directory to save CSV file (defaults to save_dir.parent)
+            existing_ids: Pre-loaded set of existing entry IDs for deduplication.
+                         If None, will load from JSON files.
 
         Returns:
             Dictionary containing:
@@ -567,8 +570,14 @@ class ArxivService:
 
         # Step 2: Filter papers (determine new/duplicate/review)
         logger.info("\n[Step 2] Filtering papers...")
-        existing_ids = self._load_existing_ids()
-        filtered = self.filter_papers(papers, existing_ids)
+        # Use provided existing_ids or load from files
+        if existing_ids is not None:
+            logger.info(f"Using provided existing_ids: {len(existing_ids)} papers")
+            filtered = self.filter_papers(papers, existing_ids)
+        else:
+            existing_ids_internal = self._load_existing_ids()
+            logger.info(f"Loaded existing_ids from files: {len(existing_ids_internal)} papers")
+            filtered = self.filter_papers(papers, existing_ids_internal)
 
         # Step 3: Download PDFs for new papers with retry
         logger.info("\n[Step 3] Downloading PDFs with retry...")
