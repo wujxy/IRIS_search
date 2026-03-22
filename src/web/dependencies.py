@@ -1,114 +1,76 @@
 """
-Dependency injection for IRIS Web module.
-Provides FastAPI dependencies for services.
+FastAPI Dependencies for IRIS Web Module
+
+This module provides FastAPI dependency functions for route handlers.
+It uses the loaders module for service creation and caching.
 """
 
 from fastapi import Depends
-from services.paper_service import PaperService
-from src.config import get_config
+
+from src.web.loaders import (
+    get_cached_paper_service,
+    get_cached_qa_service,
+    get_web_config,
+)
+from src.web.exceptions import ModelUnavailableError
 
 
-class ModelUnavailableError(Exception):
-    """Raised when a model is not available for request."""
+def get_paper_service():
+    """
+    FastAPI dependency for PaperService.
 
-    def __init__(self, model_type: str):
-        """
-        Initialize model unavailable error.
+    Returns:
+        PaperService instance (cached)
 
-        Args:
-            model_type: Type of model ('embedding' or 'qa')
-        """
-        self.model_type = model_type
-        self.message_en = f"{model_type.upper()} model is not available. Please start the model service."
-        self.message_zh = f"{model_type.upper()} 模型不可用。请启动模型服务。"
-        super().__init__(self.message_en)
-
-
-def get_paper_service() -> PaperService:
-    """Get PaperService instance with configured database path."""
-    config = get_config()
-    db_path = config.storage['paper_db_path']
-    return PaperService(db_path)
-
-
-def get_web_config() -> dict:
-    """Get web configuration from config.yaml."""
-    config = get_config()
-    web_conf = config.web
-    if not web_conf:
-        return {
-            'host': '127.0.0.1',
-            'port': 8000,
-            'reload': True,
-            'log_level': 'info',
-            'pagination': {
-                'default_per_page': 10,
-                'max_per_page': 100
-            }
-        }
-    result = {
-        'host': web_conf.get('host', '127.0.0.1'),
-        'port': web_conf.get('port', 8000),
-        'reload': web_conf.get('reload', True),
-        'log_level': web_conf.get('log_level', 'info'),
-        'pagination': {
-            'default_per_page': 10,
-            'max_per_page': 100
-        }
-    }
-    return result
+    Example:
+        @app.get("/papers")
+        def list_papers(service: PaperService = Depends(get_paper_service)):
+            return service.list_papers()
+    """
+    return get_cached_paper_service()
 
 
 def get_qa_service():
-    """Get QAService instance with all dependencies."""
-    # Note: Model availability is already checked during web service startup in run_web.py
-    # No need to check again on every request (was causing blocking issues)
-    if not hasattr(get_qa_service, '_instance'):
-        from core.qa_service import QAService
-        from core.retriever import Retriever
-        from infrastructure.milvus_service import MilvusService
-        from infrastructure.embedding_service import EmbeddingService
+    """
+    FastAPI dependency for QAService.
 
-        config = get_config()
+    Returns:
+        QAService instance (cached)
 
-        # Check if services are enabled
-        if not config.milvus.get('enabled', False):
-            raise RuntimeError("Milvus service is not enabled. Please enable it in config.yaml")
-        if not config.embedding.get('enabled', False):
-            raise RuntimeError("Embedding service is not enabled. Please enable it in config.yaml")
+    Note:
+        Model availability is checked during web service startup
+        in run_web.py. No need to check on every request.
 
-        # Create Milvus service
-        milvus_service = MilvusService(
-            uri=config.milvus['uri'],
-            collection_name=config.milvus['collection_name'],
-            embedding_dim=config.milvus['embedding_dim']
-        )
+    Example:
+        @app.post("/qa")
+        async def ask_question(
+            question: str,
+            service: QAService = Depends(get_qa_service)
+        ):
+            return await service.query(question)
+    """
+    return get_cached_qa_service()
 
-        # Create embedding service
-        embedding_service = EmbeddingService(
-            base_url=config.embedding['base_url'],
-            model_name=config.embedding['model_name'],
-            batch_size=config.embedding.get('batch_size', 32)
-        )
 
-        # Create retriever
-        retriever = Retriever(
-            embedding_service=embedding_service,
-            milvus_service=milvus_service,
-            reranker_service=None  # Reranker is optional
-        )
+def get_web_config_dependency():
+    """
+    FastAPI dependency for web configuration.
 
-        # Create QA service
-        qa_service = QAService(
-            retriever=retriever,
-            base_url=config.qa['base_url'],
-            model_name=config.qa['model_name'],
-            system_prompt=config.qa['system_prompt'],
-            temperature=config.qa.get('temperature', 0.7),
-            max_tokens=config.qa.get('max_tokens', 2048),
-            timeout=config.qa.get('timeout', 120.0)
-        )
+    Returns:
+        Web configuration dictionary
 
-        get_qa_service._instance = qa_service
+    Example:
+        @app.get("/config")
+        def get_config(config: dict = Depends(get_web_config_dependency)):
+            return config
+    """
+    return get_web_config()
 
-    return get_qa_service._instance
+
+# Export exceptions for use in routes
+__all__ = [
+    "get_paper_service",
+    "get_qa_service",
+    "get_web_config_dependency",
+    "ModelUnavailableError",
+]
