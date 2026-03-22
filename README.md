@@ -2,6 +2,29 @@
 
 AI-powered literature monitoring and knowledge extraction system for arXiv papers.
 
+## Quick Start with uv (Recommended)
+
+### One-Click Setup
+
+```bash
+git clone <repository-url>
+cd IRIS_search
+
+# One-click setup with uv
+./setup.sh
+
+# Configure your paths
+nano configs/config.yaml
+
+# Start Milvus (required)
+bash build_milvus.sh
+
+# Run IRIS
+./start.sh
+```
+
+For detailed deployment instructions, see [UV_DEPLOYMENT.md](UV_DEPLOYMENT.md).
+
 ## Overview
 
 IRIS automatically:
@@ -53,6 +76,19 @@ pip install arxiv PyYAML requests
 # UltraRAG, vllm, sentence-transformers, faiss-gpu are assumed to be installed
 ```
 
+### OR: Traditional Setup (without uv)
+
+If you prefer not to use uv:
+
+```bash
+# Create virtual environment
+python -m venv .venv
+source .venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
 ## Configuration
 
 Edit `configs/config.yaml` to customize:
@@ -63,6 +99,22 @@ Edit `configs/config.yaml` to customize:
 - Storage paths (default: `/home/NagaiYoru/research/IRIS_papers`)
 
 ## Usage
+
+### Quick Commands (with uv)
+
+```bash
+# Run single update
+./start.sh
+
+# Interactive query
+./start.sh query
+
+# Web interface
+./start.sh web
+
+# Daemon mode
+./start.sh daemon
+```
 
 ### Starting vLLM Service (Required for QA)
 

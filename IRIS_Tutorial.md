@@ -1,8 +1,72 @@
 # IRIS - 智能文献信息系统教程
 # 独立于 UltraRAG 框架
 
+---
+
+## 快速开始
+
+> 本项目现已支持 **uv 包管理器** 和 **一键部署脚本**，可在 5 分钟内完成部署。
+
+### 快速部署
+
+```bash
+# 1. 克隆或进入项目目录
+cd /path/to/IRIS_search
+
+# 2. 运行一键部署脚本
+./setup.sh
+
+# 3. 配置系统
+nano configs/config.yaml
+
+# 4. 启动 Milvus (Docker)
+bash build_milvus.sh
+
+# 5. 运行 IRIS
+./start.sh
+```
+
+**部署选项**：
+```bash
+./setup.sh              # 标准安装（仅核心依赖）
+./setup.sh --gpu        # 安装 GPU 支持
+./setup.sh --dev        # 安装开发工具
+./setup.sh --all        # 安装所有可选依赖
+./setup.sh --reinstall  # 强制重新安装
+```
+
+### 快速使用
+
+| 命令 | 描述 |
+|------|------|
+| `./start.sh` | 运行单次更新周期 |
+| `./start.sh daemon` | 守护进程模式（自动定期更新） |
+| `./start.sh query` | 交互式查询模式 |
+| `./start.sh web` | 启动 Web 界面 (http://127.0.0.1:8000) |
+| `./start.sh help` | 显示帮助信息 |
+
+### Web 界面
+
+启动 Web 服务后，访问 **http://127.0.0.1:8000** 可以：
+- 浏览所有论文
+- 搜索和过滤论文
+- 查看论文详情
+- 使用 AI 问答功能（全局检索 + 单篇论文检索）
+
+### 关于 uv
+
+[uv](https://github.com/astral-sh/uv) 是一个极速的 Python 包管理器：
+- **速度**: 比 pip 快 10-100 倍
+- **便捷**: 自动管理虚拟环境
+- **可靠**: 统一的依赖管理 (pyproject.toml)
+
+详见 [UV_DEPLOYMENT.md](UV_DEPLOYMENT.md)
+
+---
+
 ## 目录
 
+0. [快速开始](#快速开始)
 1. [项目介绍](#1-项目介绍)
 2. [系统架构](#2-系统架构)
 3. [环境准备](#3-环境准备)
