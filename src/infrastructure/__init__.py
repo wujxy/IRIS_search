@@ -7,10 +7,13 @@ from .milvus_service import MilvusService
 from .embedding_service import EmbeddingService
 from .document_processor import DocumentProcessor
 from .reranker_service import RerankerService
+from .base import BaseService, RetryableService
 
 __all__ = [
     "MilvusService",
     "EmbeddingService",
     "DocumentProcessor",
     "RerankerService",
+    "BaseService",
+    "RetryableService",
 ]

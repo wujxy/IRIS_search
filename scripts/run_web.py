@@ -14,7 +14,8 @@ sys.path.insert(1, str(project_root / "src"))
 
 import uvicorn
 import logging
-from utils.helpers import load_config, setup_logging
+from src.config import get_config
+from src.common import setup_logging
 from services.deploy_service import DeployService
 
 # Setup logging
@@ -78,13 +79,9 @@ def check_and_start_models(deploy_server):
 def main():
     """Start the IRIS web server."""
     # Load configuration
-    config = load_config()
-    web_config = config.get('web', {
-        'host': '127.0.0.1',
-        'port': 8000,
-        'reload': True,
-        'log_level': 'info'
-    })
+    config_loader = get_config()
+    config = config_loader.config
+    web_config = config_loader.web or {}
 
     host = web_config.get('host', '127.0.0.1')
     port = web_config.get('port', 8000)

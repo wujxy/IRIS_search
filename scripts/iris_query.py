@@ -21,7 +21,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 # Add src to path for new structure
 sys.path.insert(1, str(Path(__file__).parent.parent / "src"))
 
-from utils.helpers import load_config, setup_logging
+from src.config import get_config
+from src.common import setup_logging
 from services.deploy_service import DeployService
 from services.paper_service import PaperService
 
@@ -405,7 +406,8 @@ Examples:
     args = parser.parse_args()
 
     # Load configuration
-    config = load_config(args.config)
+    config_loader = get_config(args.config)
+    config = config_loader.config
 
     # Override database path if specified
     database_root = args.database or config["storage"]["database_root"]
