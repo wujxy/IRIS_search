@@ -19,7 +19,7 @@ arxiv:
     - sno
     - kamland
     - borexino
-  max_results_per_keyword: 2
+  max_results_per_keyword: 3
   sort_by: SubmittedDate  # Options: SubmittedDate, LastUpdatedDate, Relevance
 
 storage:
@@ -56,6 +56,8 @@ milvus:
 
 # Embedding service configuration
 embedding:
+  provider: local # Provider: local, openai, cohere, azure_openai
+  # Local VLLM config
   base_url: http://127.0.0.1:65503/v1
   model_name: qwen3-embedding-0.6b
   batch_size: 32
@@ -64,13 +66,36 @@ embedding:
   gpu_memory_utilization: 0.15
   tensor_parallel_size: 1
   enforce_eager: true
+  # External API support (optional)
+  api_key: ${OPENAI_API_KEY} # Use environment variable for security
+  openai:
+    model: text-embedding-3-small  # OpenAI model name
+    dimensions: 1536
+  cohere:
+    model: embed-english-v3.0
+    input_type: search_document
+  azure_openai:
+    endpoint: https://your-resource.openai.azure.com
+    api_version: 2024-02-01
+    deployment: your-deployment-name
 
 # Reranker service configuration
 reranker:
-  model_path: /home/NagaiYoru/LLM_model/bge-reranker-v2-m3
+  provider: local # Provider: local, cohere, openai_compatible
+  enabled: false  # Set to true to enable reranking
+  # Local rerank model 
+  model_path: /home/NagaiYoru/LLM_model/MiniCPM-Reranker-Light
   batch_size: 16
   device: cpu  # cpu Or cuda:0
-  enabled: false  # Set to true to enable reranking
+  # External API support (optional)
+  api_key: ${COHERE_API_KEY}  # Use environment variable for security
+  api_url: null  # For OpenAI-compatible endpoints
+  cohere:
+    model: rerank-english-v3.0
+    top_n: 5
+  openai_compatible:
+    model: bge-reranker-v2-m3
+    endpoint: http://your-reranker-api/v1
 
 # Document processing configuration
 document:
@@ -86,6 +111,7 @@ retrieval:
 
 # QA generation configuration
 qa:
+  provider: local # Provider: local, openai, anthropic, cohere, azure_openai
   model_name: llama3-3b-instruct  # Model name for vLLM API calls
   question_set_path: ./configs/questions.txt
   system_prompt: "你是一个专业的文献库搜索总结智能助手。请基于提供的英文文献，忽略参考文献，使用中文回答问题，要求足够专业。"
@@ -94,10 +120,25 @@ qa:
   max_tokens: 2048
   # vLLM QA model configuration
   base_url: http://127.0.0.1:65504/v1
-  max_model_len: 8192
-  gpu_memory_utilization: 0.85
+  max_model_len: 4096
+  gpu_memory_utilization: 0.84
   tensor_parallel_size: 1
   enforce_eager: true
+  # External API support (optional)
+  # api_key: ${OPENAI_API_KEY}  # Use environment variable for security
+  openai:
+    model: gpt-4o-mini
+  anthropic:
+    model: claude-3-5-sonnet-20241022
+    max_tokens: 4096
+    version: "2023-05-22"
+  cohere:
+    model: command-r-plus
+    connect_timeout: 30
+  azure_openai:
+    endpoint: https://your-resource.openai.azure.com
+    api_version: 2024-02-01
+    deployment: your-deployment-name
 
 email:
   enabled: false  # Set to true to enable email notifications

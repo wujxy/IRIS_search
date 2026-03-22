@@ -3,6 +3,7 @@ Retriever for IRIS
 Integrates embedding, Milvus search, and reranking.
 """
 
+import asyncio
 import logging
 from typing import Dict, List, Optional
 
@@ -96,7 +97,9 @@ class Retriever:
 
         logger.debug(f"Milvus search: top_k={retrieval_count}, filter={filter_expr}")
 
-        results = self.milvus_service.search(
+        # Run synchronous Milvus search in thread pool to avoid blocking event loop
+        results = await asyncio.to_thread(
+            self.milvus_service.search,
             query_emb[0],
             top_k=retrieval_count,
             filter_expr=filter_expr,
@@ -262,20 +265,29 @@ def create_retriever_from_config(config: dict) -> Retriever:
     )
 
     # Create Embedding service
+    embedding_config = config["embedding"]
     embedding_service = EmbeddingService(
-        base_url=config["embedding"]["base_url"],
-        model_name=config["embedding"]["model_name"],
-        batch_size=config["embedding"].get("batch_size", 32)
+        base_url=embedding_config["base_url"],
+        model_name=embedding_config["model_name"],
+        provider=embedding_config.get("provider", "local"),
+        api_key=embedding_config.get("api_key"),
+        provider_config=embedding_config,
+        batch_size=embedding_config.get("batch_size", 32)
     )
 
     # Create Reranker service (optional)
     reranker_service = None
     if config.get("reranker", {}).get("enabled", False):
         from infrastructure.reranker_service import RerankerService
+        reranker_config = config["reranker"]
         reranker_service = RerankerService(
-            model_path=config["reranker"]["model_path"],
-            device=config["reranker"].get("device", "cpu"),
-            batch_size=config["reranker"].get("batch_size", 16)
+            model_path=reranker_config.get("model_path"),
+            device=reranker_config.get("device", "cpu"),
+            batch_size=reranker_config.get("batch_size", 16),
+            provider=reranker_config.get("provider", "local"),
+            api_key=reranker_config.get("api_key"),
+            api_url=reranker_config.get("api_url"),
+            provider_config=reranker_config
         )
 
     # Create Retriever

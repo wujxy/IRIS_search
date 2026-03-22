@@ -47,6 +47,15 @@ jinja2>=3.1.2  # Template engine
 python-multipart>=0.0.6  # Form data parsing
 
 # ============================================================
+# Optional: External API Providers
+# ============================================================
+# Install these only if you want to use external APIs instead of local vLLM
+# Uncomment the ones you need:
+
+# cohere>=5.0.0  # For Cohere embedding/rerank/chat APIs
+# anthropic>=0.18.0  # For Anthropic Claude chat API
+
+# ============================================================
 # Optional: GPU acceleration
 # ============================================================
 # Uncomment if using CUDA

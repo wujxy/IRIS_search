@@ -6,7 +6,7 @@ Handles arXiv paper search and PDF download with filtering capabilities.
 import csv
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import List, Dict, Any, Set, Optional, Tuple
 
@@ -150,6 +150,10 @@ class ArxivService:
                     start_dt = datetime.strptime(start_time, "%Y-%m-%dT%H:%M:%S")
                 except ValueError:
                     logger.warning(f"Invalid start_time format: {start_time}")
+
+            # Make timezone-aware (UTC) to match paper datetimes
+            if start_dt and start_dt.tzinfo is None:
+                start_dt = start_dt.replace(tzinfo=timezone.utc)
 
         query_parts = []
         for item in self.keywords:

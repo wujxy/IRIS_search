@@ -211,11 +211,18 @@ class VllmControl:
             self.model_path = config["models"]["embedding_model_path"]
         else:
             self.model_path = config["models"]["llm_model_path"]
-        self.ultrarag_path = None
 
-        # Process management
+        # Process management - use IRIS project's .venv Python
         self.process = None
-        self.venv_python = "python"  # Use system python, not UltraRAG venv
+        # Get project root and venv path
+        project_root = Path(__file__).parent.parent.parent
+        venv_python = project_root / ".venv" / "bin" / "python"
+        if not venv_python.exists():
+            # Fallback to system python if venv doesn't exist
+            venv_python = "python"
+            logger.warning(f"Virtual environment not found at {project_root}/.venv, using system python")
+        self.venv_python = str(venv_python)
+        logger.info(f"Using Python: {self.venv_python}")
 
         logger.info(f"VllmControl initialized for {model_type} model")
 

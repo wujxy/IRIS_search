@@ -8,7 +8,7 @@ CUDA_VISIBLE_DEVICES=0 python -m vllm.entrypoints.openai.api_server \
     --trust-remote-code \
     --host 127.0.0.1 \
     --port 65504 \
-    --max-model-len 8192 \
-    --gpu-memory-utilization 0.85 \
+    --max-model-len 4096 \
+    --gpu-memory-utilization 0.84 \
     --tensor-parallel-size 1 \
     --enforce-eager \

@@ -12,6 +12,7 @@ import logging
 
 from web.routers import web_routes, api_routes, qa_routes
 from web.template_config import templates
+from web.dependencies import ModelUnavailableError
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +62,20 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     return JSONResponse(
         status_code=422,
         content={"detail": exc.errors(), "body": exc.body}
+    )
+
+
+@app.exception_handler(ModelUnavailableError)
+async def model_unavailable_handler(request: Request, exc: ModelUnavailableError):
+    """Handle model unavailable errors with bilingual messages."""
+    return JSONResponse(
+        status_code=503,
+        content={
+            "error": "model_unavailable",
+            "message_en": exc.message_en,
+            "message_zh": exc.message_zh,
+            "model_type": exc.model_type
+        }
     )
 
 

@@ -15,10 +15,64 @@ sys.path.insert(1, str(project_root / "src"))
 import uvicorn
 import logging
 from utils.helpers import load_config, setup_logging
+from services.deploy_service import DeployService
 
 # Setup logging
 setup_logging()
 logger = logging.getLogger(__name__)
+
+
+def check_and_start_models(deploy_server):
+    """
+    Check and start Milvus, embedding, and QA models if needed.
+    Web service will start regardless of status (graceful degradation).
+    """
+    import time
+
+    # 1. Check and start Milvus container first
+    logger.info("Checking Milvus container...")
+    if not deploy_server.milvus_control.search():
+        logger.warning("Milvus container not running, attempting to start...")
+        if deploy_server.milvus_control.start():
+            logger.info("Milvus container started successfully")
+            # Wait for Milvus to be ready
+            logger.info("Waiting for Milvus to be ready...")
+            time.sleep(10)
+        else:
+            logger.error("Failed to start Milvus container")
+    else:
+        logger.info("Milvus container already running")
+
+    # 2. Check embedding model (port 65503)
+    logger.info("Checking embedding model...")
+    if not deploy_server.index_vllm.search(timeout=10):
+        logger.warning("Embedding model not running, attempting to start...")
+        if deploy_server.index_vllm.start():
+            if deploy_server.index_vllm.search(timeout=60):
+                logger.info("Embedding model started successfully")
+            else:
+                logger.error("Embedding model failed to become ready")
+        else:
+            logger.error("Failed to start embedding model")
+    else:
+        logger.info("Embedding model already running")
+
+    # Check QA model (port 65504)
+    logger.info("Checking QA model...")
+    if not deploy_server.qa_vllm.search(timeout=10):
+        logger.warning("QA model not running, attempting to start...")
+        if deploy_server.qa_vllm.start():
+            if deploy_server.qa_vllm.search(timeout=60):
+                logger.info("QA model started successfully")
+            else:
+                logger.error("QA model failed to become ready")
+        else:
+            logger.error("Failed to start QA model")
+    else:
+        logger.info("QA model already running")
+
+    # Continue to start web service regardless of infrastructure status
+    logger.info("Web service will start regardless of infrastructure status")
 
 
 def main():
@@ -36,6 +90,11 @@ def main():
     port = web_config.get('port', 8000)
     reload = web_config.get('reload', True)
     log_level = web_config.get('log_level', 'info')
+
+    # Check and start models before web service (similar to run_update_cycle.py line 262)
+    logger.info("Checking model availability before starting web service...")
+    deploy_server = DeployService(config)
+    check_and_start_models(deploy_server)
 
     logger.info(f"Starting IRIS Web Server on {host}:{port}")
 

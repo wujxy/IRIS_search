@@ -1,22 +1,44 @@
 """
 QA Service for IRIS
-RAG-based question answering service independent of UltraRAG.
+RAG-based question answering service supporting local vLLM and external APIs.
 """
 
 import json
 import logging
 import uuid
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 from core.retriever import Retriever
+
+# Optional provider imports
+try:
+    from openai import AsyncOpenAI
+except ImportError:
+    AsyncOpenAI = None
+
+try:
+    from anthropic import AsyncAnthropic
+except ImportError:
+    AsyncAnthropic = None
+
+try:
+    import cohere
+except ImportError:
+    cohere = None
 
 logger = logging.getLogger(__name__)
 
 
 class QAService:
     """
-    Question answering service using RAG with LLM generation.
+    Universal QA service supporting local vLLM and external chat APIs.
+
+    Supported providers:
+    - local: vLLM server (default)
+    - openai: OpenAI chat API
+    - anthropic: Anthropic Claude API
+    - cohere: Cohere chat API
     """
 
     def __init__(
@@ -24,51 +46,173 @@ class QAService:
         retriever: Retriever,
         base_url: str,
         model_name: str,
+        provider: str = "local",
+        api_key: Optional[str] = None,
+        provider_config: Optional[Dict[str, Any]] = None,
         system_prompt: str = "你是一个专业的问答助手。请一定记住使用中文回答问题，且足够专业。",
         temperature: float = 0.7,
         max_tokens: int = 2048,
         timeout: float = 120.0
     ):
         """
-        Initialize QA service.
+        Initialize QA service with provider detection.
 
         Args:
             retriever: Retriever instance
-            base_url: vLLM generation server URL
+            base_url: API base URL
             model_name: Model name for generation
+            provider: Provider type (local, openai, anthropic, cohere)
+            api_key: API key for external providers
+            provider_config: Provider-specific configuration
             system_prompt: System prompt for the LLM
             temperature: Generation temperature (default: 0.7)
             max_tokens: Maximum tokens to generate (default: 2048)
             timeout: Request timeout (default: 120.0)
         """
-        try:
-            from openai import AsyncOpenAI
-        except ImportError:
-            raise ImportError(
-                "openai is not installed. Install it with `pip install openai`"
-            )
-
+        self.provider = provider or "local"
+        self.provider_config = provider_config or {}
         self.retriever = retriever
         self.base_url = base_url
-        self.model_name = model_name
         self.system_prompt = system_prompt
         self.temperature = temperature
         self.max_tokens = max_tokens
         self.timeout = timeout
 
-        self.client = AsyncOpenAI(
-            base_url=base_url,
-            api_key="dummy",
-            timeout=timeout
-        )
+        # Validate and initialize provider
+        if self.provider in ["local", "openai"]:
+            self._init_openai_client(base_url, model_name, api_key, timeout)
+            self._generate_method = self._generate_openai
+        elif self.provider == "anthropic":
+            self._init_anthropic_client(api_key, model_name)
+            self._generate_method = self._generate_anthropic
+        elif self.provider == "cohere":
+            self._init_cohere_client(api_key, model_name)
+            self._generate_method = self._generate_cohere
+        else:
+            raise ValueError(f"Unsupported provider: {self.provider}")
+
+        self.model_name = model_name
 
         # Conversation storage (in-memory, can be replaced with persistent storage)
         self._conversations: Dict[str, List[Dict]] = {}
 
         logger.info(
-            f"QA Service initialized: model={model_name}, "
+            f"QA Service initialized ({self.provider}): model={model_name}, "
             f"temperature={temperature}, max_tokens={max_tokens}"
         )
+
+    def _init_openai_client(self, base_url: str, model_name: str, api_key: Optional[str], timeout: float):
+        """Initialize OpenAI-compatible client for local and OpenAI."""
+        if AsyncOpenAI is None:
+            raise ImportError(
+                "openai is not installed. Install it with `pip install openai`"
+            )
+
+        # For local provider, use dummy key; for OpenAI, require real key
+        if self.provider == "openai" and not api_key:
+            raise ValueError("api_key is required for openai provider")
+
+        openai_config = self.provider_config.get("openai", {})
+        final_model_name = openai_config.get("model", model_name)
+
+        self.client = AsyncOpenAI(
+            base_url=base_url,
+            api_key=api_key or "dummy",
+            timeout=timeout
+        )
+        self.model_name = final_model_name
+
+    def _init_anthropic_client(self, api_key: Optional[str], model_name: str):
+        """Initialize Anthropic Claude client."""
+        if AsyncAnthropic is None:
+            raise ImportError(
+                "anthropic is not installed. Install it with `pip install anthropic`"
+            )
+        if not api_key:
+            raise ValueError("api_key is required for anthropic provider")
+
+        anthropic_config = self.provider_config.get("anthropic", {})
+
+        self.client = AsyncAnthropic(api_key=api_key)
+        self.model_name = anthropic_config.get("model", model_name)
+        self.max_tokens = anthropic_config.get("max_tokens", self.max_tokens)
+        self.anthropic_version = anthropic_config.get("version", "2023-05-22")
+
+    def _init_cohere_client(self, api_key: Optional[str], model_name: str):
+        """Initialize Cohere chat client."""
+        if cohere is None:
+            raise ImportError(
+                "cohere is not installed. Install it with `pip install cohere`"
+            )
+        if not api_key:
+            raise ValueError("api_key is required for cohere provider")
+
+        cohere_config = self.provider_config.get("cohere", {})
+
+        connect_timeout = cohere_config.get("connect_timeout", self.timeout)
+        self.client = cohere.AsyncClient(api_key, timeout=connect_timeout)
+        self.model_name = cohere_config.get("model", model_name)
+
+    async def _generate_openai(self, messages: List[Dict]) -> str:
+        """Generate using OpenAI-compatible API (local vLLM or OpenAI)."""
+        response = await self.client.chat.completions.create(
+            model=self.model_name,
+            messages=messages,
+            temperature=self.temperature,
+            max_tokens=self.max_tokens
+        )
+        return response.choices[0].message.content
+
+    async def _generate_anthropic(self, messages: List[Dict]) -> str:
+        """Generate using Anthropic Claude API."""
+        # Extract system message from messages
+        system_message = self.system_prompt
+        user_messages = []
+
+        for msg in messages:
+            if msg["role"] == "system":
+                system_message = msg["content"]
+            else:
+                # Convert OpenAI format to Anthropic format
+                user_messages.append({
+                    "role": msg["role"],
+                    "content": msg["content"]
+                })
+
+        response = await self.client.messages.create(
+            model=self.model_name,
+            system=system_message,
+            messages=user_messages,
+            max_tokens=self.max_tokens,
+            temperature=self.temperature
+        )
+
+        # Anthropic returns content blocks
+        return response.content[0].text
+
+    async def _generate_cohere(self, messages: List[Dict]) -> str:
+        """Generate using Cohere chat API."""
+        # Extract current message and chat history
+        current_message = messages[-1]["content"] if messages else ""
+
+        # Build chat history (excluding system prompt and current message)
+        chat_history = []
+        for msg in messages[:-1]:
+            if msg["role"] in ["user", "assistant"]:
+                chat_history.append({
+                    "role": msg["role"],
+                    "message": msg["content"]
+                })
+
+        response = await self.client.chat(
+            model=self.model_name,
+            message=current_message,
+            chat_history=chat_history if chat_history else None,
+            temperature=self.temperature,
+            max_tokens=self.max_tokens
+        )
+
+        return response.text
 
     async def query(
         self,
@@ -96,7 +240,7 @@ class QAService:
         Raises:
             ValueError: If mode is invalid
         """
-        logger.info(f"Querying: '{question}', mode={mode}")
+        logger.info(f"Querying: '{question}', mode={mode}, provider={self.provider}")
 
         # 1. Retrieve relevant chunks
         retrieved = await self.retriever.retrieve(
@@ -120,16 +264,9 @@ class QAService:
             conversation_history=conversation_history
         )
 
-        # 4. Generate answer
+        # 4. Generate answer using provider-specific method
         try:
-            response = await self.client.chat.completions.create(
-                model=self.model_name,
-                messages=messages,
-                temperature=self.temperature,
-                max_tokens=self.max_tokens
-            )
-
-            answer = response.choices[0].message.content
+            answer = await self._generate_method(messages)
             logger.info(f"Generated answer: {len(answer)} chars")
             return answer
 
@@ -375,8 +512,12 @@ class QAService:
 
     def close(self) -> None:
         """Close the client connection."""
-        if self.client:
-            self.client.close()
+        if hasattr(self, 'client') and self.client:
+            if self.provider == "anthropic":
+                # Anthropic client doesn't have close method
+                pass
+            else:
+                self.client.close()
         logger.debug("QA client closed")
 
     def __enter__(self):
@@ -408,6 +549,8 @@ def create_qa_service_from_config(config: dict) -> QAService:
             - retrieval.top_k (optional)
             - retrieval.rerank_multiplier (optional)
             - qa.base_url (generation server URL)
+            - qa.provider (optional, default: "local")
+            - qa.api_key (optional, for external providers)
             - qa.system_prompt (optional)
             - qa.temperature (optional)
             - qa.max_tokens (optional)
@@ -431,6 +574,9 @@ def create_qa_service_from_config(config: dict) -> QAService:
         retriever=retriever,
         base_url=qa_config.get("base_url", "http://127.0.0.1:65504/v1"),
         model_name=model_name,
+        provider=qa_config.get("provider", "local"),
+        api_key=qa_config.get("api_key"),
+        provider_config=qa_config,
         system_prompt=qa_config.get("system_prompt", "你是一个专业的文献问答助手。请一定记住使用中文回答问题，且足够专业。"),
         temperature=qa_config.get("temperature", 0.7),
         max_tokens=qa_config.get("max_tokens", 2048),

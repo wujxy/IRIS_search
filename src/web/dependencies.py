@@ -8,6 +8,22 @@ from services.paper_service import PaperService
 from utils.helpers import load_config
 
 
+class ModelUnavailableError(Exception):
+    """Raised when a model is not available for request."""
+
+    def __init__(self, model_type: str):
+        """
+        Initialize model unavailable error.
+
+        Args:
+            model_type: Type of model ('embedding' or 'qa')
+        """
+        self.model_type = model_type
+        self.message_en = f"{model_type.upper()} model is not available. Please start the model service."
+        self.message_zh = f"{model_type.upper()} 模型不可用。请启动模型服务。"
+        super().__init__(self.message_en)
+
+
 def get_paper_service() -> PaperService:
     """Get PaperService instance with configured database path."""
     config = load_config()
@@ -32,6 +48,8 @@ def get_web_config() -> dict:
 
 def get_qa_service():
     """Get QAService instance with all dependencies."""
+    # Note: Model availability is already checked during web service startup in run_web.py
+    # No need to check again on every request (was causing blocking issues)
     if not hasattr(get_qa_service, '_instance'):
         from core.qa_service import QAService
         from core.retriever import Retriever

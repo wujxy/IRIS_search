@@ -242,10 +242,14 @@ def create_index_service_from_config(config: dict) -> IndexService:
         Configured IndexService instance
     """
     # Create Embedding service
+    embedding_config = config["embedding"]
     embedding_service = EmbeddingService(
-        base_url=config["embedding"]["base_url"],
-        model_name=config["embedding"]["model_name"],
-        batch_size=config["embedding"].get("batch_size", 32)
+        base_url=embedding_config["base_url"],
+        model_name=embedding_config["model_name"],
+        provider=embedding_config.get("provider", "local"),
+        api_key=embedding_config.get("api_key"),
+        provider_config=embedding_config,
+        batch_size=embedding_config.get("batch_size", 32)
     )
 
     # Create Milvus service

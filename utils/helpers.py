@@ -4,9 +4,38 @@ IRIS Utility Functions
 
 import json
 import logging
+import os
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Any
+
+
+def expand_env_vars(config):
+    """
+    Expand environment variables in configuration.
+
+    Replaces ${VAR_NAME} patterns with values from environment variables.
+    Useful for API keys and sensitive configuration.
+
+    Args:
+        config: Configuration dict, list, or string
+
+    Returns:
+        Configuration with environment variables expanded
+    """
+    if isinstance(config, dict):
+        return {k: expand_env_vars(v) for k, v in config.items()}
+    elif isinstance(config, list):
+        return [expand_env_vars(item) for item in config]
+    elif isinstance(config, str):
+        def replace_env(match):
+            var_name = match.group(1)
+            return os.getenv(var_name, match.group(0))
+
+        return re.sub(r'\$\{([^}]+)\}', replace_env, config)
+    else:
+        return config
 
 
 def load_config(config_path: str = None) -> Dict[str, Any]:
@@ -17,7 +46,7 @@ def load_config(config_path: str = None) -> Dict[str, Any]:
         config_path: Path to config.yaml file
 
     Returns:
-        Dictionary containing configuration
+        Dictionary containing configuration with environment variables expanded
     """
     import yaml
 
@@ -26,6 +55,9 @@ def load_config(config_path: str = None) -> Dict[str, Any]:
 
     with open(config_path, 'r', encoding='utf-8') as f:
         config = yaml.safe_load(f)
+
+    # Expand environment variables (e.g., ${API_KEY} -> actual value)
+    config = expand_env_vars(config)
 
     return config
 
