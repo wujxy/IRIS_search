@@ -165,7 +165,7 @@ class ArxivService:
 
         search = arxiv.Search(
             query=query,
-            max_results=self.max_results * 2,  # Search more for retry
+            max_results=self.max_results,
             sort_by=self.sort_by
         )
 

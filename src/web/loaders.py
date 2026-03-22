@@ -109,7 +109,7 @@ def create_reranker_service() -> Optional[RerankerService]:
         return None
 
     return RerankerService(
-        model_path=reranker_config['model_path'],
+        model_path=config.get('models', {}).get('reranker_model_path'),
         batch_size=reranker_config.get('batch_size', 16),
         device=reranker_config.get('device', 'cpu')
     )

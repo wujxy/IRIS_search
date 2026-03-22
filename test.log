@@ -1,428 +1,205 @@
-[0;32m[INFO][0m Starting IRIS literature monitoring service...
-[0;32m[INFO][0m Python environment: .venv/bin/python
-[0;32m[INFO][0m Configuration file: /home/NagaiYoru/LLM_tuning/IRIS_search/configs/config.yaml
-[0;32m[INFO][0m Running update cycle...
-2026-03-22 15:22:27,678 [INFO] utils.helpers: Logging initialized. Log file: logs/iris_20260322_152227.log
-2026-03-22 15:22:27,678 [INFO] __main__: ============================================================
-2026-03-22 15:22:27,678 [INFO] __main__: Starting IRIS Update Cycle
-2026-03-22 15:22:27,678 [INFO] __main__: ============================================================
-2026-03-22 15:22:27,678 [INFO] __main__: 
-[Step 1] Creating update folder...
-2026-03-22 15:22:27,679 [INFO] __main__: Update folder: /home/NagaiYoru/research/IRIS_papers/update_2026_03_22_1522
-2026-03-22 15:22:27,679 [INFO] __main__: 
-[Step 2] Initializing PaperService and loading existing papers...
-2026-03-22 15:22:27,680 [INFO] services.paper_service: Database tables and indexes initialized
-2026-03-22 15:22:27,680 [INFO] services.paper_service: Paper service initialized with database: /home/NagaiYoru/research/IRIS_papers/iris_papers.db
-2026-03-22 15:22:27,680 [INFO] __main__: Found 0 existing papers in SQLite database
-2026-03-22 15:22:27,681 [INFO] __main__: 
-[Step 3] Initializing arXiv service...
-2026-03-22 15:22:27,681 [INFO] __main__: 
-[Step 4] Managing papers via arxiv_service...
-2026-03-22 15:22:27,681 [INFO] services.arxiv_service: ============================================================
-2026-03-22 15:22:27,681 [INFO] services.arxiv_service: Starting Paper Management Workflow
-2026-03-22 15:22:27,681 [INFO] services.arxiv_service: ============================================================
-2026-03-22 15:22:27,681 [INFO] services.arxiv_service: 
+
+[0;36m[1mStarting IRIS Update Cycle[0m
+warning: The `tool.uv.dev-dependencies` field (used in `pyproject.toml`) is deprecated and will be removed in a future release; use `dependency-groups.dev` instead
+Config validation warning: Milvus port 29901 appears to be in use.
+Ensure Milvus Docker container is running.
+2026-03-22 22:53:08 - core.orchestrator - INFO - ============================================================
+2026-03-22 22:53:08 - core.orchestrator - INFO - Starting IRIS Update Cycle
+2026-03-22 22:53:08 - core.orchestrator - INFO - ============================================================
+2026-03-22 22:53:08 - core.orchestrator - INFO - Update folder: /home/NagaiYoru/research/IRIS_papers/update_2026_03_22_2253
+2026-03-22 22:53:08 - services.paper_service - INFO - Database tables and indexes initialized
+2026-03-22 22:53:08 - services.paper_service - INFO - Paper service initialized with database: /home/NagaiYoru/research/IRIS_papers/iris_papers.db
+2026-03-22 22:53:08 - core.orchestrator - INFO - Found 0 existing papers
+2026-03-22 22:53:08 - core.orchestrator - INFO - 
+[Step 3] Managing papers from arXiv...
+2026-03-22 22:53:08 - services.arxiv_service - INFO - ============================================================
+2026-03-22 22:53:08 - services.arxiv_service - INFO - Starting Paper Management Workflow
+2026-03-22 22:53:08 - services.arxiv_service - INFO - ============================================================
+2026-03-22 22:53:08 - services.arxiv_service - INFO - 
 [Step 1] Searching arXiv incrementally...
-2026-03-22 15:22:27,681 [INFO] services.arxiv_service: Searching arXiv for papers since 
-2026-03-22 15:22:27,681 [INFO] arxiv: Requesting page (first: True, try: 0): https://export.arxiv.org/api/query?search_query=neutrino+OR+juno+OR+dune+OR+hyper-kamiokande+OR+super-kamiokande+OR+sno+OR+kamland+OR+borexino&id_list=&sortBy=submittedDate&sortOrder=descending&start=0&max_results=100
-2026-03-22 15:22:29,042 [INFO] arxiv: Got first page: 100 of 41570 total results
-2026-03-22 15:22:29,043 [INFO] services.arxiv_service: Found 6 papers from arXiv after time filter
-2026-03-22 15:22:29,043 [INFO] services.arxiv_service: 
+2026-03-22 22:53:08 - services.arxiv_service - INFO - Searching arXiv for papers since 
+2026-03-22 22:53:08 - arxiv - INFO - Requesting page (first: True, try: 0): https://export.arxiv.org/api/query?search_query=borexino&id_list=&sortBy=submittedDate&sortOrder=descending&start=0&max_results=100
+2026-03-22 22:53:18 - arxiv - INFO - Got first page: 100 of 372 total results
+2026-03-22 22:53:18 - services.arxiv_service - INFO - Found 2 papers from arXiv after time filter
+2026-03-22 22:53:18 - services.arxiv_service - INFO - 
 [Step 2] Filtering papers...
-2026-03-22 15:22:29,043 [INFO] services.arxiv_service: Using provided existing_ids: 0 papers
-2026-03-22 15:22:29,043 [INFO] services.arxiv_service: Filtering results: 6 new, 0 duplicates, 0 review papers
-2026-03-22 15:22:29,043 [INFO] services.arxiv_service: 
+2026-03-22 22:53:18 - services.arxiv_service - INFO - Using provided existing_ids: 0 papers
+2026-03-22 22:53:18 - services.arxiv_service - INFO - Filtering results: 2 new, 0 duplicates, 0 review papers
+2026-03-22 22:53:18 - services.arxiv_service - INFO - 
 [Step 3] Downloading PDFs with retry...
-2026-03-22 15:22:29,043 [INFO] services.arxiv_service: Downloading PDF for: Searching for dark matter X-ray lines from the Large Magella...
-2026-03-22 15:22:43,105 [INFO] services.arxiv_service: Downloaded PDF: Searching for dark matter X-ray lines from the Lar... -> 2603.19109v1.pdf
-2026-03-22 15:22:43,106 [INFO] services.arxiv_service: Successfully downloaded: Searching for dark matter X-ray lines fr...
-2026-03-22 15:22:43,106 [INFO] services.arxiv_service: Downloading PDF for: Neutrino Mass and Leptogenesis in the Non-SUSY Modular $A^\p...
-2026-03-22 15:29:28,508 [INFO] services.arxiv_service: Downloaded PDF: Neutrino Mass and Leptogenesis in the Non-SUSY Mod... -> 2603.19104v1.pdf
-2026-03-22 15:29:28,510 [INFO] services.arxiv_service: Successfully downloaded: Neutrino Mass and Leptogenesis in the No...
-2026-03-22 15:29:28,511 [INFO] services.arxiv_service: Downloading PDF for: Analysis of Io's tidal response as a function of the propert...
-2026-03-22 15:31:11,521 [INFO] services.arxiv_service: Downloaded PDF: Analysis of Io's tidal response as a function of t... -> 2603.19095v1.pdf
-2026-03-22 15:31:11,532 [INFO] services.arxiv_service: Successfully downloaded: Analysis of Io's tidal response as a fun...
-2026-03-22 15:31:11,533 [INFO] services.arxiv_service: Downloading PDF for: Isentropic hybrid stars in the Nambu-Jona-Lasinio model: eff...
-2026-03-22 15:31:16,429 [INFO] services.arxiv_service: Downloaded PDF: Isentropic hybrid stars in the Nambu-Jona-Lasinio ... -> 2603.19085v1.pdf
-2026-03-22 15:31:16,431 [INFO] services.arxiv_service: Successfully downloaded: Isentropic hybrid stars in the Nambu-Jon...
-2026-03-22 15:31:16,431 [INFO] services.arxiv_service: Downloading PDF for: Neutrinos and gamma rays from Seyfert galaxies constrain the...
-2026-03-22 15:31:36,850 [INFO] services.arxiv_service: Downloaded PDF: Neutrinos and gamma rays from Seyfert galaxies con... -> 2603.18214v1.pdf
-2026-03-22 15:31:36,852 [INFO] services.arxiv_service: Successfully downloaded: Neutrinos and gamma rays from Seyfert ga...
-2026-03-22 15:31:36,852 [INFO] services.arxiv_service: Downloading PDF for: High-redshift physics from the acoustic scale...
-2026-03-22 15:32:27,085 [INFO] services.arxiv_service: Downloaded PDF: High-redshift physics from the acoustic scale... -> 2603.18131v1.pdf
-2026-03-22 15:32:27,087 [INFO] services.arxiv_service: Successfully downloaded: High-redshift physics from the acoustic ...
-2026-03-22 15:32:27,088 [INFO] services.arxiv_service: Downloaded 6 papers, failed 0
-2026-03-22 15:32:27,090 [INFO] services.arxiv_service: Saved 6 papers to CSV: /home/NagaiYoru/research/IRIS_papers/update_2026_03_22_1522/papers.csv
-2026-03-22 15:32:27,090 [INFO] services.arxiv_service: 
+2026-03-22 22:53:18 - services.arxiv_service - INFO - Downloading PDF for: Potassium influence on Earth's mantle convection and Borexin...
+2026-03-22 22:54:59 - services.arxiv_service - INFO - Downloaded PDF: Potassium influence on Earth's mantle convection a... -> 2602.15386v1.pdf
+2026-03-22 22:54:59 - services.arxiv_service - INFO - Successfully downloaded: Potassium influence on Earth's mantle co...
+2026-03-22 22:54:59 - services.arxiv_service - INFO - Downloading PDF for: Constraints on non-standard neutrino interactions from Borex...
+2026-03-22 23:03:03 - services.arxiv_service - INFO - Downloaded PDF: Constraints on non-standard neutrino interactions ... -> 2602.08685v1.pdf
+2026-03-22 23:03:03 - services.arxiv_service - INFO - Successfully downloaded: Constraints on non-standard neutrino int...
+2026-03-22 23:03:03 - services.arxiv_service - INFO - Downloaded 2 papers, failed 0
+2026-03-22 23:03:03 - services.arxiv_service - INFO - Saved 2 papers to CSV: /home/NagaiYoru/research/IRIS_papers/update_2026_03_22_2253/papers.csv
+2026-03-22 23:03:03 - services.arxiv_service - INFO - 
 ============================================================
-2026-03-22 15:32:27,090 [INFO] services.arxiv_service: Paper Management Summary:
-2026-03-22 15:32:27,090 [INFO] services.arxiv_service:   Total papers: 6
-2026-03-22 15:32:27,090 [INFO] services.arxiv_service:   New: 6
-2026-03-22 15:32:27,090 [INFO] services.arxiv_service:   Duplicate: 0
-2026-03-22 15:32:27,090 [INFO] services.arxiv_service:   Review: 0
-2026-03-22 15:32:27,090 [INFO] services.arxiv_service:   Downloaded: 6
-2026-03-22 15:32:27,090 [INFO] services.arxiv_service:   Failed: 0
-2026-03-22 15:32:27,090 [INFO] services.arxiv_service:   CSV file: /home/NagaiYoru/research/IRIS_papers/update_2026_03_22_1522/papers.csv
-2026-03-22 15:32:27,090 [INFO] services.arxiv_service: ============================================================
-2026-03-22 15:32:27,090 [INFO] __main__: 
-[Step 5] Saving metadata...
-2026-03-22 15:32:27,091 [INFO] __main__: 
-[Step 6] Generating update log...
-2026-03-22 15:32:27,092 [INFO] __main__: 
-[Step 8] Starting infrastructure for 6 new papers...
-2026-03-22 15:32:27,092 [INFO] services.deploy_service: Using Python: /home/NagaiYoru/LLM_tuning/IRIS_search/.venv/bin/python
-2026-03-22 15:32:27,092 [INFO] services.deploy_service: VllmControl initialized for index model
-2026-03-22 15:32:27,092 [INFO] services.deploy_service: Using Python: /home/NagaiYoru/LLM_tuning/IRIS_search/.venv/bin/python
-2026-03-22 15:32:27,092 [INFO] services.deploy_service: VllmControl initialized for qa model
-2026-03-22 15:32:27,092 [INFO] services.deploy_service: DeployServer initialized
-2026-03-22 15:32:27,161 [INFO] services.deploy_service: Waiting for Milvus to be ready...
-2026-03-22 15:32:37,171 [INFO] services.deploy_service: Checking index model (embedding) at http://127.0.0.1:65503/v1
-2026-03-22 15:32:37,172 [INFO] services.deploy_service: Checking vLLM index service at http://127.0.0.1:65503/v1/models...
-2026-03-22 15:32:48,955 [WARNING] services.deploy_service: vLLM index service not ready after 10 seconds
-2026-03-22 15:32:48,955 [WARNING] services.deploy_service: Index model not available, starting...
-2026-03-22 15:32:48,955 [INFO] services.deploy_service: Starting vLLM index with model: /home/NagaiYoru/LLM_model/Qwen3-Embedding-0.6B
-2026-03-22 15:32:48,955 [INFO] services.deploy_service: vLLM command: /home/NagaiYoru/LLM_tuning/IRIS_search/.venv/bin/python -m vllm.entrypoints.openai.api_server --model /home/NagaiYoru/LLM_model/Qwen3-Embedding-0.6B --trust-remote-code --host 127.0.0.1 --port 65503 --max-model-len 4096 --gpu-memory-utilization 0.15 --tensor-parallel-size 1 --served-model-name qwen3-embedding-0.6b --enforce-eager
-2026-03-22 15:32:48,955 [INFO] services.deploy_service: vLLM index started with PID: 1166684
-2026-03-22 15:32:48,955 [INFO] services.deploy_service: Checking vLLM index service at http://127.0.0.1:65503/v1/models...
-2026-03-22 15:33:07,884 [INFO] services.deploy_service: vLLM index service is ready
-2026-03-22 15:33:07,884 [INFO] services.deploy_service: Checking QA model at http://127.0.0.1:65504/v1
-2026-03-22 15:33:07,884 [INFO] services.deploy_service: Checking vLLM qa service at http://127.0.0.1:65504/v1/models...
-2026-03-22 15:33:18,120 [WARNING] services.deploy_service: vLLM qa service not ready after 10 seconds
-2026-03-22 15:33:18,120 [WARNING] services.deploy_service: QA model not available, starting...
-2026-03-22 15:33:18,120 [INFO] services.deploy_service: Starting vLLM qa with model: /home/NagaiYoru/LLM_model/Llama-3.2-3B-Instruct
-2026-03-22 15:33:18,120 [INFO] services.deploy_service: vLLM command: /home/NagaiYoru/LLM_tuning/IRIS_search/.venv/bin/python -m vllm.entrypoints.openai.api_server --model /home/NagaiYoru/LLM_model/Llama-3.2-3B-Instruct --trust-remote-code --host 127.0.0.1 --port 65504 --max-model-len 4096 --gpu-memory-utilization 0.84 --tensor-parallel-size 1 --served-model-name llama3-3b-instruct --enforce-eager
-2026-03-22 15:33:18,122 [INFO] services.deploy_service: vLLM qa started with PID: 1166984
-2026-03-22 15:33:18,122 [INFO] services.deploy_service: Checking vLLM qa service at http://127.0.0.1:65504/v1/models...
-2026-03-22 15:33:26,747 [INFO] services.deploy_service: vLLM qa service is ready
-2026-03-22 15:33:26,748 [INFO] services.deploy_service: Infrastructure started successfully
-2026-03-22 15:33:26,748 [INFO] __main__: 
-[Step 9] Building index with new services...
-2026-03-22 15:33:26,812 [INFO] infrastructure.embedding_service: Embedding service initialized (local vLLM): http://127.0.0.1:65503/v1, model=qwen3-embedding-0.6b
-2026-03-22 15:33:26,812 [INFO] infrastructure.milvus_service: Milvus service initialized: http://localhost:29901/iris_papers, dim=1024
-2026-03-22 15:33:26,812 [INFO] infrastructure.document_processor: Document processor initialized: chunk_size=512, overlap=50, semantic=False
-2026-03-22 15:33:26,812 [INFO] core.index_service: IndexService initialized: chunk_size=512, overlap=50, semantic=False
-2026-03-22 15:33:26,812 [INFO] core.index_service: IndexService created from config
-2026-03-22 15:33:26,812 [INFO] core.index_service: Starting indexing: pdf_dir=/home/NagaiYoru/research/IRIS_papers/update_2026_03_22_1522/pdfs, output_dir=/home/NagaiYoru/research/IRIS_papers/update_2026_03_22_1522/index_storage
-2026-03-22 15:33:26,843 [INFO] infrastructure.milvus_service: Creating collection: 'iris_papers' with dim=1024
-2026-03-22 15:33:28,239 [INFO] infrastructure.milvus_service: Successfully created collection: 'iris_papers'
-2026-03-22 15:33:28,240 [INFO] core.index_service: Found 6 PDF files to process
-2026-03-22 15:33:28,454 [INFO] infrastructure.document_processor: Chunked text into 373 chunks
-2026-03-22 15:33:28,532 [INFO] infrastructure.document_processor: Chunked text into 220 chunks
-2026-03-22 15:33:28,574 [INFO] infrastructure.document_processor: Chunked text into 101 chunks
-2026-03-22 15:33:28,632 [INFO] infrastructure.document_processor: Chunked text into 187 chunks
-2026-03-22 15:33:29,814 [INFO] infrastructure.document_processor: Chunked text into 251 chunks
-2026-03-22 15:33:29,899 [INFO] infrastructure.document_processor: Chunked text into 95 chunks
-2026-03-22 15:33:29,899 [INFO] core.index_service: Generating embeddings for 1227 chunks...
-2026-03-22 15:33:30,509 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:30,627 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:30,739 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:30,835 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:30,932 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:31,033 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:31,160 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:31,253 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:31,347 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:31,469 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:36,805 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:36,930 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:31,410 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:31,506 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:31,606 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:31,714 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:31,802 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:31,952 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:32,053 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:32,141 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:32,225 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:32,354 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:32,441 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:32,536 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:32,638 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:32,747 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:32,851 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:32,935 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:33,036 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:33,154 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:33,250 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:33,357 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:33,457 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:33,555 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:33,674 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:33,790 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:33,883 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:33,997 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:34,052 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:34,083 [INFO] infrastructure.embedding_service: Encoded 1227 texts with local, shape=(1227, 1024)
-2026-03-22 15:33:34,083 [INFO] core.index_service: Inserting 1227 chunks into Milvus...
-2026-03-22 15:33:34,083 [INFO] infrastructure.milvus_service: Inserting 1227 chunks into 'iris_papers'
-Inserting to Milvus:   0%|          | 0/1227 [00:00<?, ?chunk/s]Inserting to Milvus: 100%|██████████| 1227/1227 [00:00<00:00, 11941.88chunk/s]Inserting to Milvus: 100%|██████████| 1227/1227 [00:00<00:00, 11918.34chunk/s]
-2026-03-22 15:33:34,713 [INFO] infrastructure.milvus_service: Successfully inserted 1227 chunks into 'iris_papers'
-2026-03-22 15:33:34,725 [INFO] core.index_service: Indexing complete: 1227 chunks from 6 papers
-2026-03-22 15:33:34,726 [INFO] __main__: Index created successfully
-2026-03-22 15:33:34,726 [INFO] __main__: 
-[Step 10] QA processing...
-2026-03-22 15:33:34,726 [INFO] infrastructure.milvus_service: Milvus service initialized: http://localhost:29901/iris_papers, dim=1024
-2026-03-22 15:33:34,754 [INFO] infrastructure.embedding_service: Embedding service initialized (local vLLM): http://127.0.0.1:65503/v1, model=qwen3-embedding-0.6b
-2026-03-22 15:33:34,754 [INFO] core.retriever: Retriever initialized: default_top_k=5, retrieval_top_k=15, reranker_enabled=False
-2026-03-22 15:33:34,754 [INFO] core.retriever: Retriever created from config
-2026-03-22 15:33:34,781 [INFO] core.qa_service: QA Service initialized (local): model=llama3-3b-instruct, temperature=0.7, max_tokens=2048
-2026-03-22 15:33:34,781 [INFO] core.qa_service: QAService created from config
-2026-03-22 15:33:34,782 [INFO] core.qa_service: Querying: 'What is the main problem this paper addresses?', mode=specific, provider=local
-2026-03-22 15:33:34,782 [INFO] core.retriever: Retrieving for query: 'What is the main problem this paper addresses?', mode=specific, top_k=5
-2026-03-22 15:33:34,800 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:34,800 [INFO] infrastructure.embedding_service: Encoded 1 texts with local, shape=(1, 1024)
-2026-03-22 15:33:34,824 [INFO] core.retriever: Returning 5 results
-2026-03-22 15:33:35,489 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
-2026-03-22 15:33:35,493 [INFO] core.qa_service: Generated answer: 49 chars
-2026-03-22 15:33:35,493 [INFO] core.qa_service: Querying: 'What are the key contributions of this paper?', mode=specific, provider=local
-2026-03-22 15:33:35,493 [INFO] core.retriever: Retrieving for query: 'What are the key contributions of this paper?', mode=specific, top_k=5
-2026-03-22 15:33:35,509 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:35,510 [INFO] infrastructure.embedding_service: Encoded 1 texts with local, shape=(1, 1024)
-2026-03-22 15:33:35,515 [INFO] core.retriever: Returning 5 results
-2026-03-22 15:33:39,098 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
-2026-03-22 15:33:39,099 [INFO] core.qa_service: Generated answer: 395 chars
-2026-03-22 15:33:39,099 [INFO] core.qa_service: Querying: 'What methods or techniques are used in this paper?', mode=specific, provider=local
-2026-03-22 15:33:39,099 [INFO] core.retriever: Retrieving for query: 'What methods or techniques are used in this paper?', mode=specific, top_k=5
-2026-03-22 15:33:39,119 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:39,119 [INFO] infrastructure.embedding_service: Encoded 1 texts with local, shape=(1, 1024)
-2026-03-22 15:33:39,125 [INFO] core.retriever: Returning 5 results
-2026-03-22 15:33:44,786 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
-2026-03-22 15:33:44,787 [INFO] core.qa_service: Generated answer: 769 chars
-2026-03-22 15:33:44,787 [INFO] core.qa_service: Querying: 'What are the important concepts introduced in this paper?', mode=specific, provider=local
-2026-03-22 15:33:44,787 [INFO] core.retriever: Retrieving for query: 'What are the important concepts introduced in this paper?', mode=specific, top_k=5
-2026-03-22 15:33:44,805 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:44,806 [INFO] infrastructure.embedding_service: Encoded 1 texts with local, shape=(1, 1024)
-2026-03-22 15:33:44,812 [INFO] core.retriever: Returning 5 results
-2026-03-22 15:33:48,933 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
-2026-03-22 15:33:48,934 [INFO] core.qa_service: Generated answer: 628 chars
-2026-03-22 15:33:48,934 [INFO] core.qa_service: Querying: 'What are the possible research directions for future work based on this paper?', mode=specific, provider=local
-2026-03-22 15:33:48,934 [INFO] core.retriever: Retrieving for query: 'What are the possible research directions for future work based on this paper?', mode=specific, top_k=5
-2026-03-22 15:33:48,955 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:48,955 [INFO] infrastructure.embedding_service: Encoded 1 texts with local, shape=(1, 1024)
-2026-03-22 15:33:48,961 [INFO] core.retriever: Returning 5 results
-2026-03-22 15:33:50,594 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
-2026-03-22 15:33:50,594 [INFO] core.qa_service: Generated answer: 165 chars
-2026-03-22 15:33:50,594 [INFO] core.qa_service: Answered 5 questions
-2026-03-22 15:33:50,595 [INFO] __main__: Generated summary for: Searching for dark matter X-ray lines from the Lar...
-2026-03-22 15:33:50,595 [INFO] core.qa_service: Querying: 'What is the main problem this paper addresses?', mode=specific, provider=local
-2026-03-22 15:33:50,595 [INFO] core.retriever: Retrieving for query: 'What is the main problem this paper addresses?', mode=specific, top_k=5
-2026-03-22 15:33:50,596 [INFO] openai._base_client: Retrying request to /embeddings in 0.457807 seconds
-2026-03-22 15:33:51,082 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:51,083 [INFO] infrastructure.embedding_service: Encoded 1 texts with local, shape=(1, 1024)
-2026-03-22 15:33:51,088 [INFO] core.retriever: Returning 5 results
-2026-03-22 15:33:51,089 [INFO] openai._base_client: Retrying request to /chat/completions in 0.453142 seconds
-2026-03-22 15:33:52,424 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
-2026-03-22 15:33:52,424 [INFO] core.qa_service: Generated answer: 86 chars
-2026-03-22 15:33:52,424 [INFO] core.qa_service: Querying: 'What are the key contributions of this paper?', mode=specific, provider=local
-2026-03-22 15:33:52,424 [INFO] core.retriever: Retrieving for query: 'What are the key contributions of this paper?', mode=specific, top_k=5
-2026-03-22 15:33:52,446 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:33:52,446 [INFO] infrastructure.embedding_service: Encoded 1 texts with local, shape=(1, 1024)
-2026-03-22 15:33:52,463 [INFO] core.retriever: Returning 5 results
-2026-03-22 15:34:04,580 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
-2026-03-22 15:34:04,581 [INFO] core.qa_service: Generated answer: 667 chars
-2026-03-22 15:34:04,581 [INFO] core.qa_service: Querying: 'What methods or techniques are used in this paper?', mode=specific, provider=local
-2026-03-22 15:34:04,581 [INFO] core.retriever: Retrieving for query: 'What methods or techniques are used in this paper?', mode=specific, top_k=5
-2026-03-22 15:34:04,600 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:34:04,600 [INFO] infrastructure.embedding_service: Encoded 1 texts with local, shape=(1, 1024)
-2026-03-22 15:34:04,606 [INFO] core.retriever: Returning 5 results
-2026-03-22 15:34:09,112 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
-2026-03-22 15:34:09,112 [INFO] core.qa_service: Generated answer: 469 chars
-2026-03-22 15:34:09,112 [INFO] core.qa_service: Querying: 'What are the important concepts introduced in this paper?', mode=specific, provider=local
-2026-03-22 15:34:09,112 [INFO] core.retriever: Retrieving for query: 'What are the important concepts introduced in this paper?', mode=specific, top_k=5
-2026-03-22 15:34:09,131 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:34:09,131 [INFO] infrastructure.embedding_service: Encoded 1 texts with local, shape=(1, 1024)
-2026-03-22 15:34:09,136 [INFO] core.retriever: Returning 5 results
-2026-03-22 15:34:15,331 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
-2026-03-22 15:34:15,332 [INFO] core.qa_service: Generated answer: 740 chars
-2026-03-22 15:34:15,332 [INFO] core.qa_service: Querying: 'What are the possible research directions for future work based on this paper?', mode=specific, provider=local
-2026-03-22 15:34:15,332 [INFO] core.retriever: Retrieving for query: 'What are the possible research directions for future work based on this paper?', mode=specific, top_k=5
-2026-03-22 15:34:15,351 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:34:15,351 [INFO] infrastructure.embedding_service: Encoded 1 texts with local, shape=(1, 1024)
-2026-03-22 15:34:15,357 [INFO] core.retriever: Returning 5 results
-2026-03-22 15:34:15,492 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
-2026-03-22 15:34:15,493 [INFO] core.qa_service: Generated answer: 642 chars
-2026-03-22 15:34:15,493 [INFO] core.qa_service: Answered 5 questions
-2026-03-22 15:34:15,493 [INFO] __main__: Generated summary for: Neutrino Mass and Leptogenesis in the Non-SUSY Mod...
-2026-03-22 15:34:15,493 [INFO] core.qa_service: Querying: 'What is the main problem this paper addresses?', mode=specific, provider=local
-2026-03-22 15:34:15,493 [INFO] core.retriever: Retrieving for query: 'What is the main problem this paper addresses?', mode=specific, top_k=5
-2026-03-22 15:34:15,493 [INFO] openai._base_client: Retrying request to /embeddings in 0.468840 seconds
-2026-03-22 15:34:15,993 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:34:15,993 [INFO] infrastructure.embedding_service: Encoded 1 texts with local, shape=(1, 1024)
-2026-03-22 15:34:15,999 [INFO] core.retriever: Returning 5 results
-2026-03-22 15:34:16,000 [INFO] openai._base_client: Retrying request to /chat/completions in 0.408970 seconds
-2026-03-22 15:34:17,566 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
-2026-03-22 15:34:17,567 [INFO] core.qa_service: Generated answer: 129 chars
-2026-03-22 15:34:17,567 [INFO] core.qa_service: Querying: 'What are the key contributions of this paper?', mode=specific, provider=local
-2026-03-22 15:34:17,567 [INFO] core.retriever: Retrieving for query: 'What are the key contributions of this paper?', mode=specific, top_k=5
-2026-03-22 15:34:17,590 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:34:17,590 [INFO] infrastructure.embedding_service: Encoded 1 texts with local, shape=(1, 1024)
-2026-03-22 15:34:17,596 [INFO] core.retriever: Returning 5 results
-2026-03-22 15:34:20,994 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
-2026-03-22 15:34:20,995 [INFO] core.qa_service: Generated answer: 413 chars
-2026-03-22 15:34:20,995 [INFO] core.qa_service: Querying: 'What methods or techniques are used in this paper?', mode=specific, provider=local
-2026-03-22 15:34:20,995 [INFO] core.retriever: Retrieving for query: 'What methods or techniques are used in this paper?', mode=specific, top_k=5
-2026-03-22 15:34:21,014 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:34:21,014 [INFO] infrastructure.embedding_service: Encoded 1 texts with local, shape=(1, 1024)
-2026-03-22 15:34:21,020 [INFO] core.retriever: Returning 5 results
-2026-03-22 15:34:25,093 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
-2026-03-22 15:34:25,093 [INFO] core.qa_service: Generated answer: 413 chars
-2026-03-22 15:34:25,093 [INFO] core.qa_service: Querying: 'What are the important concepts introduced in this paper?', mode=specific, provider=local
-2026-03-22 15:34:25,093 [INFO] core.retriever: Retrieving for query: 'What are the important concepts introduced in this paper?', mode=specific, top_k=5
-2026-03-22 15:34:25,109 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:34:25,110 [INFO] infrastructure.embedding_service: Encoded 1 texts with local, shape=(1, 1024)
-2026-03-22 15:34:25,115 [INFO] core.retriever: Returning 5 results
-2026-03-22 15:34:35,438 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
-2026-03-22 15:34:35,438 [INFO] core.qa_service: Generated answer: 592 chars
-2026-03-22 15:34:35,438 [INFO] core.qa_service: Querying: 'What are the possible research directions for future work based on this paper?', mode=specific, provider=local
-2026-03-22 15:34:35,438 [INFO] core.retriever: Retrieving for query: 'What are the possible research directions for future work based on this paper?', mode=specific, top_k=5
-2026-03-22 15:34:35,454 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:34:35,454 [INFO] infrastructure.embedding_service: Encoded 1 texts with local, shape=(1, 1024)
-2026-03-22 15:34:35,460 [INFO] core.retriever: Returning 5 results
-2026-03-22 15:34:40,635 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
-2026-03-22 15:34:40,636 [INFO] core.qa_service: Generated answer: 517 chars
-2026-03-22 15:34:40,636 [INFO] core.qa_service: Answered 5 questions
-2026-03-22 15:34:40,636 [INFO] __main__: Generated summary for: Analysis of Io's tidal response as a function of t...
-2026-03-22 15:34:40,636 [INFO] core.qa_service: Querying: 'What is the main problem this paper addresses?', mode=specific, provider=local
-2026-03-22 15:34:40,636 [INFO] core.retriever: Retrieving for query: 'What is the main problem this paper addresses?', mode=specific, top_k=5
-2026-03-22 15:34:40,637 [INFO] openai._base_client: Retrying request to /embeddings in 0.400664 seconds
-2026-03-22 15:34:41,057 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:34:41,058 [INFO] infrastructure.embedding_service: Encoded 1 texts with local, shape=(1, 1024)
-2026-03-22 15:34:41,064 [INFO] core.retriever: Returning 5 results
-2026-03-22 15:34:41,065 [INFO] openai._base_client: Retrying request to /chat/completions in 0.430945 seconds
-2026-03-22 15:34:42,441 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
-2026-03-22 15:34:42,441 [INFO] core.qa_service: Generated answer: 106 chars
-2026-03-22 15:34:42,442 [INFO] core.qa_service: Querying: 'What are the key contributions of this paper?', mode=specific, provider=local
-2026-03-22 15:34:42,442 [INFO] core.retriever: Retrieving for query: 'What are the key contributions of this paper?', mode=specific, top_k=5
-2026-03-22 15:34:42,461 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:34:42,461 [INFO] infrastructure.embedding_service: Encoded 1 texts with local, shape=(1, 1024)
-2026-03-22 15:34:42,467 [INFO] core.retriever: Returning 5 results
-2026-03-22 15:34:45,471 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
-2026-03-22 15:34:45,471 [INFO] core.qa_service: Generated answer: 278 chars
-2026-03-22 15:34:45,471 [INFO] core.qa_service: Querying: 'What methods or techniques are used in this paper?', mode=specific, provider=local
-2026-03-22 15:34:45,471 [INFO] core.retriever: Retrieving for query: 'What methods or techniques are used in this paper?', mode=specific, top_k=5
-2026-03-22 15:34:45,487 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:34:45,488 [INFO] infrastructure.embedding_service: Encoded 1 texts with local, shape=(1, 1024)
-2026-03-22 15:34:45,494 [INFO] core.retriever: Returning 5 results
-2026-03-22 15:34:43,750 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
-2026-03-22 15:34:43,751 [INFO] core.qa_service: Generated answer: 569 chars
-2026-03-22 15:34:43,751 [INFO] core.qa_service: Querying: 'What are the important concepts introduced in this paper?', mode=specific, provider=local
-2026-03-22 15:34:43,751 [INFO] core.retriever: Retrieving for query: 'What are the important concepts introduced in this paper?', mode=specific, top_k=5
-2026-03-22 15:34:43,767 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:34:43,768 [INFO] infrastructure.embedding_service: Encoded 1 texts with local, shape=(1, 1024)
-2026-03-22 15:34:43,773 [INFO] core.retriever: Returning 5 results
-2026-03-22 15:34:49,034 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
-2026-03-22 15:34:49,035 [INFO] core.qa_service: Generated answer: 713 chars
-2026-03-22 15:34:49,035 [INFO] core.qa_service: Querying: 'What are the possible research directions for future work based on this paper?', mode=specific, provider=local
-2026-03-22 15:34:49,035 [INFO] core.retriever: Retrieving for query: 'What are the possible research directions for future work based on this paper?', mode=specific, top_k=5
-2026-03-22 15:34:49,053 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:34:49,054 [INFO] infrastructure.embedding_service: Encoded 1 texts with local, shape=(1, 1024)
-2026-03-22 15:34:49,059 [INFO] core.retriever: Returning 5 results
-2026-03-22 15:35:02,847 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
-2026-03-22 15:35:02,848 [INFO] core.qa_service: Generated answer: 641 chars
-2026-03-22 15:35:02,848 [INFO] core.qa_service: Answered 5 questions
-2026-03-22 15:35:02,848 [INFO] __main__: Generated summary for: Isentropic hybrid stars in the Nambu-Jona-Lasinio ...
-2026-03-22 15:35:02,848 [INFO] core.qa_service: Querying: 'What is the main problem this paper addresses?', mode=specific, provider=local
-2026-03-22 15:35:02,848 [INFO] core.retriever: Retrieving for query: 'What is the main problem this paper addresses?', mode=specific, top_k=5
-2026-03-22 15:35:02,849 [INFO] openai._base_client: Retrying request to /embeddings in 0.495728 seconds
-2026-03-22 15:35:03,372 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:35:03,372 [INFO] infrastructure.embedding_service: Encoded 1 texts with local, shape=(1, 1024)
-2026-03-22 15:35:03,378 [INFO] core.retriever: Returning 5 results
-2026-03-22 15:35:03,379 [INFO] openai._base_client: Retrying request to /chat/completions in 0.392896 seconds
-2026-03-22 15:35:08,329 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
-2026-03-22 15:35:08,330 [INFO] core.qa_service: Generated answer: 425 chars
-2026-03-22 15:35:08,330 [INFO] core.qa_service: Querying: 'What are the key contributions of this paper?', mode=specific, provider=local
-2026-03-22 15:35:08,330 [INFO] core.retriever: Retrieving for query: 'What are the key contributions of this paper?', mode=specific, top_k=5
-2026-03-22 15:35:08,346 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:35:08,347 [INFO] infrastructure.embedding_service: Encoded 1 texts with local, shape=(1, 1024)
-2026-03-22 15:35:08,352 [INFO] core.retriever: Returning 5 results
-2026-03-22 15:35:07,689 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
-2026-03-22 15:35:07,689 [INFO] core.qa_service: Generated answer: 602 chars
-2026-03-22 15:35:07,689 [INFO] core.qa_service: Querying: 'What methods or techniques are used in this paper?', mode=specific, provider=local
-2026-03-22 15:35:07,689 [INFO] core.retriever: Retrieving for query: 'What methods or techniques are used in this paper?', mode=specific, top_k=5
-2026-03-22 15:35:07,706 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:35:07,707 [INFO] infrastructure.embedding_service: Encoded 1 texts with local, shape=(1, 1024)
-2026-03-22 15:35:07,713 [INFO] core.retriever: Returning 5 results
-2026-03-22 15:35:13,851 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
-2026-03-22 15:35:13,852 [INFO] core.qa_service: Generated answer: 747 chars
-2026-03-22 15:35:13,852 [INFO] core.qa_service: Querying: 'What are the important concepts introduced in this paper?', mode=specific, provider=local
-2026-03-22 15:35:13,852 [INFO] core.retriever: Retrieving for query: 'What are the important concepts introduced in this paper?', mode=specific, top_k=5
-2026-03-22 15:35:13,868 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:35:13,869 [INFO] infrastructure.embedding_service: Encoded 1 texts with local, shape=(1, 1024)
-2026-03-22 15:35:13,874 [INFO] core.retriever: Returning 5 results
-2026-03-22 15:35:18,448 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
-2026-03-22 15:35:18,449 [INFO] core.qa_service: Generated answer: 431 chars
-2026-03-22 15:35:18,449 [INFO] core.qa_service: Querying: 'What are the possible research directions for future work based on this paper?', mode=specific, provider=local
-2026-03-22 15:35:18,449 [INFO] core.retriever: Retrieving for query: 'What are the possible research directions for future work based on this paper?', mode=specific, top_k=5
-2026-03-22 15:35:18,467 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:35:18,468 [INFO] infrastructure.embedding_service: Encoded 1 texts with local, shape=(1, 1024)
-2026-03-22 15:35:18,473 [INFO] core.retriever: Returning 5 results
-2026-03-22 15:35:24,735 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
-2026-03-22 15:35:24,736 [INFO] core.qa_service: Generated answer: 712 chars
-2026-03-22 15:35:24,736 [INFO] core.qa_service: Answered 5 questions
-2026-03-22 15:35:24,736 [INFO] __main__: Generated summary for: Neutrinos and gamma rays from Seyfert galaxies con...
-2026-03-22 15:35:24,736 [INFO] core.qa_service: Querying: 'What is the main problem this paper addresses?', mode=specific, provider=local
-2026-03-22 15:35:24,736 [INFO] core.retriever: Retrieving for query: 'What is the main problem this paper addresses?', mode=specific, top_k=5
-2026-03-22 15:35:24,737 [INFO] openai._base_client: Retrying request to /embeddings in 0.410418 seconds
-2026-03-22 15:35:25,167 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:35:25,168 [INFO] infrastructure.embedding_service: Encoded 1 texts with local, shape=(1, 1024)
-2026-03-22 15:35:25,173 [INFO] core.retriever: Returning 5 results
-2026-03-22 15:35:25,175 [INFO] openai._base_client: Retrying request to /chat/completions in 0.393039 seconds
-2026-03-22 15:35:32,149 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
-2026-03-22 15:35:32,150 [INFO] core.qa_service: Generated answer: 116 chars
-2026-03-22 15:35:32,150 [INFO] core.qa_service: Querying: 'What are the key contributions of this paper?', mode=specific, provider=local
-2026-03-22 15:35:32,150 [INFO] core.retriever: Retrieving for query: 'What are the key contributions of this paper?', mode=specific, top_k=5
-2026-03-22 15:35:32,166 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:35:32,167 [INFO] infrastructure.embedding_service: Encoded 1 texts with local, shape=(1, 1024)
-2026-03-22 15:35:32,172 [INFO] core.retriever: Returning 5 results
-2026-03-22 15:35:33,727 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
-2026-03-22 15:35:33,727 [INFO] core.qa_service: Generated answer: 818 chars
-2026-03-22 15:35:33,727 [INFO] core.qa_service: Querying: 'What methods or techniques are used in this paper?', mode=specific, provider=local
-2026-03-22 15:35:33,727 [INFO] core.retriever: Retrieving for query: 'What methods or techniques are used in this paper?', mode=specific, top_k=5
-2026-03-22 15:35:33,744 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:35:33,744 [INFO] infrastructure.embedding_service: Encoded 1 texts with local, shape=(1, 1024)
-2026-03-22 15:35:33,750 [INFO] core.retriever: Returning 5 results
-2026-03-22 15:35:38,981 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
-2026-03-22 15:35:38,982 [INFO] core.qa_service: Generated answer: 721 chars
-2026-03-22 15:35:38,982 [INFO] core.qa_service: Querying: 'What are the important concepts introduced in this paper?', mode=specific, provider=local
-2026-03-22 15:35:38,982 [INFO] core.retriever: Retrieving for query: 'What are the important concepts introduced in this paper?', mode=specific, top_k=5
-2026-03-22 15:35:38,999 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:35:39,000 [INFO] infrastructure.embedding_service: Encoded 1 texts with local, shape=(1, 1024)
-2026-03-22 15:35:39,005 [INFO] core.retriever: Returning 5 results
-2026-03-22 15:35:43,476 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
-2026-03-22 15:35:43,476 [INFO] core.qa_service: Generated answer: 481 chars
-2026-03-22 15:35:43,476 [INFO] core.qa_service: Querying: 'What are the possible research directions for future work based on this paper?', mode=specific, provider=local
-2026-03-22 15:35:43,476 [INFO] core.retriever: Retrieving for query: 'What are the possible research directions for future work based on this paper?', mode=specific, top_k=5
-2026-03-22 15:35:43,492 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
-2026-03-22 15:35:43,493 [INFO] infrastructure.embedding_service: Encoded 1 texts with local, shape=(1, 1024)
-2026-03-22 15:35:43,498 [INFO] core.retriever: Returning 5 results
-2026-03-22 15:35:48,804 [INFO] httpx: HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
-2026-03-22 15:35:48,805 [INFO] core.qa_service: Generated answer: 523 chars
-2026-03-22 15:35:48,805 [INFO] core.qa_service: Answered 5 questions
-2026-03-22 15:35:48,805 [INFO] __main__: Generated summary for: High-redshift physics from the acoustic scale...
-2026-03-22 15:35:48,805 [INFO] __main__: 
-[Step 11] Generating summary and knowledge logs...
-2026-03-22 15:35:48,815 [INFO] __main__: Logs generated successfully
-2026-03-22 15:35:48,815 [INFO] __main__: 
-[Step 11.5] Saving 6 new papers to database...
-2026-03-22 15:35:48,890 [INFO] __main__: Database update completed
-2026-03-22 15:35:48,890 [INFO] __main__: 
-[Step 12] Sending email notification...
-2026-03-22 15:35:48,890 [INFO] __main__: Email notifications disabled in config
-2026-03-22 15:35:48,890 [INFO] __main__: 
-[Step 13] Stopping infrastructure...
-2026-03-22 15:35:48,890 [INFO] services.deploy_service: Stopping vLLM models...
-2026-03-22 15:35:48,890 [INFO] services.deploy_service: Stopping vLLM index (PID: 1166684)
-2026-03-22 15:35:49,705 [INFO] services.deploy_service: vLLM index stopped gracefully
-2026-03-22 15:35:49,705 [INFO] services.deploy_service: Stopping vLLM qa (PID: 1166984)
-2026-03-22 15:35:50,220 [INFO] services.deploy_service: vLLM qa stopped gracefully
-2026-03-22 15:35:53,289 [INFO] services.deploy_service: Stopping Milvus container: iris-milvus
-2026-03-22 15:35:53,679 [INFO] services.deploy_service: Milvus container stopped
-2026-03-22 15:35:53,679 [INFO] services.deploy_service: Infrastructure stopped successfully
-2026-03-22 15:35:53,679 [INFO] __main__: Infrastructure stopped successfully
-2026-03-22 15:35:53,679 [INFO] __main__: 
-============================================================
-2026-03-22 15:35:53,679 [INFO] __main__: IRIS Update Cycle Completed Successfully
-2026-03-22 15:35:53,679 [INFO] __main__: ============================================================
-2026-03-22 15:35:53,680 [INFO] __main__: Update folder: /home/NagaiYoru/research/IRIS_papers/update_2026_03_22_1522
-2026-03-22 15:35:53,680 [INFO] __main__: New papers: 6
-[0;32m[INFO][0m Update cycle completed successfully
+2026-03-22 23:03:03 - services.arxiv_service - INFO - Paper Management Summary:
+2026-03-22 23:03:03 - services.arxiv_service - INFO -   Total papers: 2
+2026-03-22 23:03:03 - services.arxiv_service - INFO -   New: 2
+2026-03-22 23:03:03 - services.arxiv_service - INFO -   Duplicate: 0
+2026-03-22 23:03:03 - services.arxiv_service - INFO -   Review: 0
+2026-03-22 23:03:03 - services.arxiv_service - INFO -   Downloaded: 2
+2026-03-22 23:03:03 - services.arxiv_service - INFO -   Failed: 0
+2026-03-22 23:03:03 - services.arxiv_service - INFO -   CSV file: /home/NagaiYoru/research/IRIS_papers/update_2026_03_22_2253/papers.csv
+2026-03-22 23:03:03 - services.arxiv_service - INFO - ============================================================
+2026-03-22 23:03:03 - core.orchestrator - INFO - Found 2 new papers
+2026-03-22 23:03:03 - core.orchestrator - INFO - 
+[Step 6] Starting infrastructure...
+2026-03-22 23:03:03 - services.deploy_service - INFO - Using Python: /home/NagaiYoru/LLM_tuning/IRIS_search/.venv/bin/python
+2026-03-22 23:03:03 - services.deploy_service - INFO - VllmControl initialized for index model
+2026-03-22 23:03:03 - services.deploy_service - INFO - Using Python: /home/NagaiYoru/LLM_tuning/IRIS_search/.venv/bin/python
+2026-03-22 23:03:03 - services.deploy_service - INFO - VllmControl initialized for qa model
+2026-03-22 23:03:03 - services.deploy_service - INFO - DeployServer initialized
+2026-03-22 23:03:04 - services.deploy_service - INFO - Waiting for Milvus to be ready...
+2026-03-22 23:03:19 - services.deploy_service - INFO - Checking index model (embedding) at http://127.0.0.1:65503/v1
+2026-03-22 23:03:19 - services.deploy_service - INFO - Checking vLLM index service at http://127.0.0.1:65503/v1/models...
+2026-03-22 23:03:30 - services.deploy_service - WARNING - vLLM index service not ready after 10 seconds
+2026-03-22 23:03:30 - services.deploy_service - WARNING - Index model not available, starting...
+2026-03-22 23:03:30 - services.deploy_service - INFO - Starting vLLM index with model: /home/NagaiYoru/LLM_model/Qwen3-Embedding-0.6B
+2026-03-22 23:03:30 - services.deploy_service - INFO - vLLM command: /home/NagaiYoru/LLM_tuning/IRIS_search/.venv/bin/python -m vllm.entrypoints.openai.api_server --model /home/NagaiYoru/LLM_model/Qwen3-Embedding-0.6B --trust-remote-code --host 127.0.0.1 --port 65503 --max-model-len 4096 --gpu-memory-utilization 0.15 --tensor-parallel-size 1 --served-model-name qwen3-embedding-0.6b --enforce-eager
+2026-03-22 23:03:30 - services.deploy_service - INFO - vLLM index started with PID: 72894
+2026-03-22 23:03:30 - services.deploy_service - INFO - Checking vLLM index service at http://127.0.0.1:65503/v1/models...
+2026-03-22 23:03:49 - services.deploy_service - INFO - vLLM index service is ready
+2026-03-22 23:03:49 - services.deploy_service - INFO - Checking QA model at http://127.0.0.1:65504/v1
+2026-03-22 23:03:49 - services.deploy_service - INFO - Checking vLLM qa service at http://127.0.0.1:65504/v1/models...
+2026-03-22 23:03:59 - services.deploy_service - WARNING - vLLM qa service not ready after 10 seconds
+2026-03-22 23:03:59 - services.deploy_service - WARNING - QA model not available, starting...
+2026-03-22 23:03:59 - services.deploy_service - INFO - Starting vLLM qa with model: /home/NagaiYoru/LLM_model/Llama-3.2-3B-Instruct
+2026-03-22 23:03:59 - services.deploy_service - INFO - vLLM command: /home/NagaiYoru/LLM_tuning/IRIS_search/.venv/bin/python -m vllm.entrypoints.openai.api_server --model /home/NagaiYoru/LLM_model/Llama-3.2-3B-Instruct --trust-remote-code --host 127.0.0.1 --port 65504 --max-model-len 4096 --gpu-memory-utilization 0.84 --tensor-parallel-size 1 --served-model-name llama3-3b-instruct --enforce-eager
+2026-03-22 23:03:59 - services.deploy_service - INFO - vLLM qa started with PID: 73203
+2026-03-22 23:03:59 - services.deploy_service - INFO - Checking vLLM qa service at http://127.0.0.1:65504/v1/models...
+2026-03-22 23:04:10 - services.deploy_service - INFO - vLLM qa service is ready
+2026-03-22 23:04:10 - services.deploy_service - INFO - Infrastructure started successfully
+2026-03-22 23:04:10 - core.orchestrator - INFO - 
+[Step 7] Building index...
+2026-03-22 23:04:10 - infrastructure.embedding_service - INFO - Embedding service initialized (local vLLM): http://127.0.0.1:65503/v1, model=qwen3-embedding-0.6b
+2026-03-22 23:04:10 - infrastructure.milvus_service - INFO - Milvus service initialized: http://localhost:29901/iris_papers, dim=1024
+2026-03-22 23:04:10 - infrastructure.document_processor - INFO - Document processor initialized: chunk_size=512, overlap=50, semantic=False
+2026-03-22 23:04:10 - core.index_service - INFO - IndexService initialized: chunk_size=512, overlap=50, semantic=False
+2026-03-22 23:04:10 - core.index_service - INFO - IndexService created from config
+2026-03-22 23:04:10 - core.index_service - INFO - Starting indexing: pdf_dir=/home/NagaiYoru/research/IRIS_papers/update_2026_03_22_2253/pdfs, output_dir=/home/NagaiYoru/research/IRIS_papers/update_2026_03_22_2253/index_storage
+2026-03-22 23:04:10 - core.index_service - INFO - Found 2 PDF files to process
+2026-03-22 23:04:10 - infrastructure.document_processor - INFO - Chunked text into 174 chunks
+2026-03-22 23:04:10 - infrastructure.document_processor - INFO - Chunked text into 25 chunks
+2026-03-22 23:04:10 - core.index_service - INFO - Generating embeddings for 199 chunks...
+2026-03-22 23:04:10 - httpx - INFO - HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-22 23:04:10 - httpx - INFO - HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-22 23:04:11 - httpx - INFO - HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-22 23:04:11 - httpx - INFO - HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-22 23:04:11 - httpx - INFO - HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-22 23:04:11 - httpx - INFO - HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-22 23:04:11 - httpx - INFO - HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-22 23:04:11 - infrastructure.embedding_service - INFO - Encoded 199 texts with local, shape=(199, 1024)
+2026-03-22 23:04:11 - core.index_service - INFO - Inserting 199 chunks into Milvus...
+2026-03-22 23:04:11 - infrastructure.milvus_service - INFO - Inserting 199 chunks into 'iris_papers'
+Inserting to Milvus:   0%|          | 0/199 [00:00<?, ?chunk/s]Inserting to Milvus: 100%|██████████| 199/199 [00:00<00:00, 8616.45chunk/s]
+2026-03-22 23:04:12 - infrastructure.milvus_service - INFO - Successfully inserted 199 chunks into 'iris_papers'
+2026-03-22 23:04:12 - core.index_service - INFO - Indexing complete: 199 chunks from 2 papers
+2026-03-22 23:04:12 - core.orchestrator - INFO - Index created successfully
+2026-03-22 23:04:12 - core.orchestrator - INFO - 
+[Step 8] QA processing...
+2026-03-22 23:04:12 - infrastructure.milvus_service - INFO - Milvus service initialized: http://localhost:29901/iris_papers, dim=1024
+2026-03-22 23:04:12 - infrastructure.embedding_service - INFO - Embedding service initialized (local vLLM): http://127.0.0.1:65503/v1, model=qwen3-embedding-0.6b
+2026-03-22 23:04:12 - core.retriever - INFO - Retriever initialized: default_top_k=5, retrieval_top_k=15, reranker_enabled=False
+2026-03-22 23:04:12 - core.retriever - INFO - Retriever created from config
+2026-03-22 23:04:12 - core.qa_service - INFO - QA Service initialized (local): model=llama3-3b-instruct, temperature=0.7, max_tokens=2048
+2026-03-22 23:04:12 - core.qa_service - INFO - QAService created from config
+2026-03-22 23:04:12 - core.qa_service - INFO - Querying: 'What is the main problem this paper addresses?', mode=specific, provider=local
+2026-03-22 23:04:12 - core.retriever - INFO - Retrieving for query: 'What is the main problem this paper addresses?', mode=specific, top_k=5
+2026-03-22 23:04:12 - httpx - INFO - HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-22 23:04:12 - infrastructure.embedding_service - INFO - Encoded 1 texts with local, shape=(1, 1024)
+2026-03-22 23:04:12 - core.retriever - INFO - Returning 5 results
+2026-03-22 23:04:15 - httpx - INFO - HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-22 23:04:15 - core.qa_service - INFO - Generated answer: 245 chars
+2026-03-22 23:04:15 - core.qa_service - INFO - Querying: 'What are the key contributions of this paper?', mode=specific, provider=local
+2026-03-22 23:04:15 - core.retriever - INFO - Retrieving for query: 'What are the key contributions of this paper?', mode=specific, top_k=5
+2026-03-22 23:04:15 - httpx - INFO - HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-22 23:04:15 - infrastructure.embedding_service - INFO - Encoded 1 texts with local, shape=(1, 1024)
+2026-03-22 23:04:15 - core.retriever - INFO - Returning 5 results
+2026-03-22 23:04:16 - httpx - INFO - HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-22 23:04:16 - core.qa_service - INFO - Generated answer: 132 chars
+2026-03-22 23:04:16 - core.qa_service - INFO - Querying: 'What methods or techniques are used in this paper?', mode=specific, provider=local
+2026-03-22 23:04:16 - core.retriever - INFO - Retrieving for query: 'What methods or techniques are used in this paper?', mode=specific, top_k=5
+2026-03-22 23:04:16 - httpx - INFO - HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-22 23:04:16 - infrastructure.embedding_service - INFO - Encoded 1 texts with local, shape=(1, 1024)
+2026-03-22 23:04:16 - core.retriever - INFO - Returning 5 results
+2026-03-22 23:04:20 - httpx - INFO - HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-22 23:04:20 - core.qa_service - INFO - Generated answer: 472 chars
+2026-03-22 23:04:20 - core.qa_service - INFO - Querying: 'What are the important concepts introduced in this paper?', mode=specific, provider=local
+2026-03-22 23:04:20 - core.retriever - INFO - Retrieving for query: 'What are the important concepts introduced in this paper?', mode=specific, top_k=5
+2026-03-22 23:04:20 - httpx - INFO - HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-22 23:04:20 - infrastructure.embedding_service - INFO - Encoded 1 texts with local, shape=(1, 1024)
+2026-03-22 23:04:20 - core.retriever - INFO - Returning 5 results
+2026-03-22 23:04:32 - httpx - INFO - HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-22 23:04:32 - core.qa_service - INFO - Generated answer: 653 chars
+2026-03-22 23:04:32 - core.qa_service - INFO - Querying: 'What are the possible research directions for future work based on this paper?', mode=specific, provider=local
+2026-03-22 23:04:32 - core.retriever - INFO - Retrieving for query: 'What are the possible research directions for future work based on this paper?', mode=specific, top_k=5
+2026-03-22 23:04:32 - httpx - INFO - HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-22 23:04:32 - infrastructure.embedding_service - INFO - Encoded 1 texts with local, shape=(1, 1024)
+2026-03-22 23:04:32 - core.retriever - INFO - Returning 5 results
+2026-03-22 23:04:36 - httpx - INFO - HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-22 23:04:36 - core.qa_service - INFO - Generated answer: 327 chars
+2026-03-22 23:04:36 - core.qa_service - INFO - Answered 5 questions
+2026-03-22 23:04:36 - core.orchestrator - INFO - Generated summary for: Potassium influence on Earth's mantle convection a...
+2026-03-22 23:04:36 - core.qa_service - INFO - Querying: 'What is the main problem this paper addresses?', mode=specific, provider=local
+2026-03-22 23:04:36 - core.retriever - INFO - Retrieving for query: 'What is the main problem this paper addresses?', mode=specific, top_k=5
+2026-03-22 23:04:36 - openai._base_client - INFO - Retrying request to /embeddings in 0.474941 seconds
+2026-03-22 23:04:36 - httpx - INFO - HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-22 23:04:36 - infrastructure.embedding_service - INFO - Encoded 1 texts with local, shape=(1, 1024)
+2026-03-22 23:04:36 - core.retriever - INFO - Returning 5 results
+2026-03-22 23:04:36 - openai._base_client - INFO - Retrying request to /chat/completions in 0.462854 seconds
+2026-03-22 23:04:38 - httpx - INFO - HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-22 23:04:38 - core.qa_service - INFO - Generated answer: 192 chars
+2026-03-22 23:04:38 - core.qa_service - INFO - Querying: 'What are the key contributions of this paper?', mode=specific, provider=local
+2026-03-22 23:04:38 - core.retriever - INFO - Retrieving for query: 'What are the key contributions of this paper?', mode=specific, top_k=5
+2026-03-22 23:04:38 - httpx - INFO - HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-22 23:04:38 - infrastructure.embedding_service - INFO - Encoded 1 texts with local, shape=(1, 1024)
+2026-03-22 23:04:38 - core.retriever - INFO - Returning 5 results
+2026-03-22 23:04:42 - httpx - INFO - HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-22 23:04:42 - core.qa_service - INFO - Generated answer: 409 chars
+2026-03-22 23:04:42 - core.qa_service - INFO - Querying: 'What methods or techniques are used in this paper?', mode=specific, provider=local
+2026-03-22 23:04:42 - core.retriever - INFO - Retrieving for query: 'What methods or techniques are used in this paper?', mode=specific, top_k=5
+2026-03-22 23:04:42 - httpx - INFO - HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-22 23:04:42 - infrastructure.embedding_service - INFO - Encoded 1 texts with local, shape=(1, 1024)
+2026-03-22 23:04:42 - core.retriever - INFO - Returning 5 results
+2026-03-22 23:04:40 - httpx - INFO - HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-22 23:04:40 - core.qa_service - INFO - Generated answer: 436 chars
+2026-03-22 23:04:40 - core.qa_service - INFO - Querying: 'What are the important concepts introduced in this paper?', mode=specific, provider=local
+2026-03-22 23:04:40 - core.retriever - INFO - Retrieving for query: 'What are the important concepts introduced in this paper?', mode=specific, top_k=5
+2026-03-22 23:04:40 - httpx - INFO - HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-22 23:04:40 - infrastructure.embedding_service - INFO - Encoded 1 texts with local, shape=(1, 1024)
+2026-03-22 23:04:40 - core.retriever - INFO - Returning 5 results
+2026-03-22 23:04:45 - httpx - INFO - HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-22 23:04:45 - core.qa_service - INFO - Generated answer: 479 chars
+2026-03-22 23:04:45 - core.qa_service - INFO - Querying: 'What are the possible research directions for future work based on this paper?', mode=specific, provider=local
+2026-03-22 23:04:45 - core.retriever - INFO - Retrieving for query: 'What are the possible research directions for future work based on this paper?', mode=specific, top_k=5
+2026-03-22 23:04:45 - httpx - INFO - HTTP Request: POST http://127.0.0.1:65503/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-22 23:04:45 - infrastructure.embedding_service - INFO - Encoded 1 texts with local, shape=(1, 1024)
+2026-03-22 23:04:45 - core.retriever - INFO - Returning 5 results
+2026-03-22 23:04:53 - httpx - INFO - HTTP Request: POST http://127.0.0.1:65504/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-22 23:04:53 - core.qa_service - INFO - Generated answer: 785 chars
+2026-03-22 23:04:53 - core.qa_service - INFO - Answered 5 questions
+2026-03-22 23:04:53 - core.orchestrator - INFO - Generated summary for: Constraints on non-standard neutrino interactions ...
+2026-03-22 23:04:53 - core.orchestrator - INFO - 
+[Step 9] Saving 2 papers to database...
+2026-03-22 23:04:53 - core.orchestrator - INFO - Database update completed
+2026-03-22 23:04:53 - core.orchestrator - INFO - 
+[Step 10] Sending notification...
+2026-03-22 23:04:53 - core.orchestrator - INFO - Email notifications disabled
+2026-03-22 23:04:53 - core.orchestrator - INFO - 
+Stopping infrastructure...
+2026-03-22 23:04:53 - services.deploy_service - INFO - Stopping vLLM models...
+2026-03-22 23:04:53 - services.deploy_service - INFO - Stopping vLLM index (PID: 72894)
+2026-03-22 23:04:54 - services.deploy_service - INFO - vLLM index stopped gracefully
+2026-03-22 23:04:54 - services.deploy_service - INFO - Stopping vLLM qa (PID: 73203)
+2026-03-22 23:04:54 - services.deploy_service - INFO - vLLM qa stopped gracefully
+2026-03-22 23:05:03 - services.deploy_service - INFO - Stopping Milvus container: iris-milvus
+2026-03-22 23:04:58 - services.deploy_service - INFO - Milvus container stopped
+2026-03-22 23:04:58 - services.deploy_service - INFO - Infrastructure stopped successfully
+2026-03-22 23:04:58 - core.orchestrator - INFO - ============================================================
+2026-03-22 23:04:58 - core.orchestrator - INFO - IRIS Update Cycle Completed Successfully
+2026-03-22 23:04:58 - core.orchestrator - INFO - ============================================================

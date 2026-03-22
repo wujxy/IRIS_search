@@ -42,7 +42,7 @@ if [ ! -d ".venv" ]; then
 fi
 
 # Use uv to run Python
-PYTHON="uv run python"
+PYTHON="uv run --no-sync python"
 
 # Parse command
 case "${1:-update}" in

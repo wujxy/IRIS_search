@@ -19,7 +19,7 @@ arxiv:
     - sno
     - kamland
     - borexino
-  max_results_per_keyword: 3
+  max_results_per_keyword: 1
   sort_by: SubmittedDate  # Options: SubmittedDate, LastUpdatedDate, Relevance
 
 storage:
@@ -37,7 +37,7 @@ storage:
 # Model paths
 models:
   embedding_model_path: /home/NagaiYoru/LLM_model/Qwen3-Embedding-0.6B
-  reranker_model_path: /home/NagaiYoru/LLM_model/bge-reranker-v2-m3
+  reranker_model_path: /home/NagaiYoru/LLM_model/MiniCPM-Reranker-Light
   llm_model_path: /home/NagaiYoru/LLM_model/Llama-3.2-3B-Instruct
 
 # Milvus configuration

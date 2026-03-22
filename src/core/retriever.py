@@ -247,7 +247,7 @@ def create_retriever_from_config(config: dict) -> Retriever:
             - embedding.model_name
             - embedding.batch_size (optional)
             - reranker.enabled (optional)
-            - reranker.model_path (optional)
+            - models.reranker_model_path
             - reranker.device (optional)
             - reranker.batch_size (optional)
             - retrieval.top_k (optional)
@@ -281,7 +281,7 @@ def create_retriever_from_config(config: dict) -> Retriever:
         from infrastructure.reranker_service import RerankerService
         reranker_config = config["reranker"]
         reranker_service = RerankerService(
-            model_path=reranker_config.get("model_path"),
+            model_path=config.get("models", {}).get("reranker_model_path"),
             device=reranker_config.get("device", "cpu"),
             batch_size=reranker_config.get("batch_size", 16),
             provider=reranker_config.get("provider", "local"),

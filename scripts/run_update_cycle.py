@@ -76,10 +76,16 @@ Examples:
     if args.log_level:
         config["logging"]["level"] = args.log_level
 
-    # Setup logging
+    # Setup logging - create log file path from log_dir
+    log_dir = Path(config["logging"]["log_dir"])
+    log_dir.mkdir(parents=True, exist_ok=True)
+    timestamp = __import__('datetime').datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_file = log_dir / f"iris_update_{timestamp}.log"
+
     setup_logging(
-        log_dir=config["logging"]["log_dir"],
-        level=config["logging"]["level"]
+        level=config["logging"]["level"],
+        log_file=str(log_file),
+        console=True
     )
 
     # Run orchestrator

@@ -483,7 +483,7 @@ Examples:
     reranker_service = None
     if config.get("reranker", {}).get("enabled", False):
         reranker_service = RerankerService(
-            model_path=config["reranker"]["model_path"],
+            model_path=config["models"]["reranker_model_path"],
             batch_size=config["reranker"].get("batch_size", 16),
             device=config["reranker"].get("device", "cpu")
         )

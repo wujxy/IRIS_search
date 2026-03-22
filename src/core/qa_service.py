@@ -543,7 +543,7 @@ def create_qa_service_from_config(config: dict) -> QAService:
             - milvus.embedding_dim
             - milvus.token (optional)
             - reranker.enabled (optional)
-            - reranker.model_path (optional)
+            - models.reranker_model_path
             - reranker.device (optional)
             - reranker.batch_size (optional)
             - retrieval.top_k (optional)
