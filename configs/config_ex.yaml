@@ -1,0 +1,148 @@
+# IRIS Configuration File (External API)
+# Intelligent Research Information System [IRIS]
+#
+# This configuration template is for using external API services:
+# - OpenAI / Cohere / Azure OpenAI for embeddings
+# - Cohere for reranking
+# - OpenAI / Anthropic / Cohere / Azure OpenAI for LLM
+#
+# ============================================================
+
+update:
+  interval_hours: 24  # How often to search for new papers
+
+arxiv:
+  keywords:
+    - neutrino
+    - juno
+    - dune
+    - hyper-kamiokande
+    - super-kamiokande
+    - sno
+    - kamland
+    - borexino
+  max_results_per_keyword: 10
+  sort_by: SubmittedDate  # Options: SubmittedDate, LastUpdatedDate, Relevance
+
+storage:
+  database_root: /path/to/your/research/IRIS_papers
+  paper_db_path: /path/to/your/research/IRIS_papers/iris_papers.db
+
+# Milvus configuration (required for both local and external API)
+milvus:
+  uri: http://localhost:29901
+  collection_name: iris_papers
+  master_collection: iris_papers_master
+  embedding_dim: 1536  # OpenAI text-embedding-3-small default dimension
+  enabled: true
+  container_name: iris-milvus
+  data_dir: /path/to/your/research/IRIS_papers/iris-milvus
+  grpc_port: 29901
+  http_port: 29902
+  image: milvusdb/milvus:latest
+  token: null
+
+# Embedding service configuration (External API)
+embedding:
+  provider: openai  # Provider: openai, cohere, azure_openai
+  # OpenAI configuration
+  api_key: ${OPENAI_API_KEY}  # Set environment variable
+  openai:
+    model: text-embedding-3-small
+    dimensions: 1536
+  # Cohere configuration (alternative)
+  # api_key: ${COHERE_API_KEY}
+  # cohere:
+  #   model: embed-english-v3.0
+  #   input_type: search_document
+  # Azure OpenAI configuration (alternative)
+  # api_key: ${AZURE_OPENAI_API_KEY}
+  # azure_openai:
+  #   endpoint: https://your-resource.openai.azure.com
+  #   api_version: 2024-02-01
+  #   deployment: your-deployment-name
+
+# Reranker service configuration (External API)
+reranker:
+  provider: cohere  # Provider: cohere
+  enabled: false  # Set to true to enable reranking
+  api_key: ${COHERE_API_KEY}  # Set environment variable
+  cohere:
+    model: rerank-english-v3.0
+    top_n: 5
+
+# Document processing configuration
+document:
+  chunk_size: 512
+  chunk_overlap: 50
+  use_title: true
+  chunk_backend: sentence  # Options: token, sentence, recursive
+
+# Retrieval configuration
+retrieval:
+  top_k: 5
+  rerank_multiplier: 3  # Retrieve top_k * this many, then rerank to top_k
+
+# QA generation configuration (External API)
+qa:
+  provider: openai  # Provider: openai, anthropic, cohere, azure_openai
+  question_set_path: ./configs/questions.txt
+  system_prompt: "你是一个专业的文献库搜索总结智能助手。请基于提供的英文文献，忽略参考文献，使用中文回答问题，要求足够专业。"
+  temperature: 0.7
+  top_p: 0.8
+  max_tokens: 2048
+  # OpenAI configuration
+  api_key: ${OPENAI_API_KEY}
+  openai:
+    model: gpt-4o-mini
+  # Anthropic configuration (alternative)
+  # api_key: ${ANTHROPIC_API_KEY}
+  # anthropic:
+  #   model: claude-3-5-sonnet-20241022
+  #   max_tokens: 4096
+  #   version: "2023-05-22"
+  # Cohere configuration (alternative)
+  # api_key: ${COHERE_API_KEY}
+  # cohere:
+  #   model: command-r-plus
+  #   connect_timeout: 30
+  # Azure OpenAI configuration (alternative)
+  # api_key: ${AZURE_OPENAI_API_KEY}
+  # azure_openai:
+  #   endpoint: https://your-resource.openai.azure.com
+  #   api_version: 2024-02-01
+  #   deployment: your-deployment-name
+
+# Email notification (recommended for external API mode)
+email:
+  enabled: false  # Set to true to enable email notifications
+  sender: your_email@gmail.com
+  smtp_server: smtp.gmail.com
+  smtp_port: 587
+  password: your_app_password  # Use app-specific password for Gmail
+  receiver: your_email@gmail.com
+  subject_prefix: "[IRIS] "
+
+filtering:
+  exclude_reviews: true
+  review_keywords:
+    - review
+    - survey
+    - overview
+
+duplicate_detection:
+  enabled: true
+
+logging:
+  level: INFO  # Options: DEBUG, INFO, WARNING, ERROR
+  log_dir: ./logs
+
+# Web interface configuration
+web:
+  host: "127.0.0.1"
+  port: 8000
+  reload: true
+  log_level: "info"
+  pagination:
+    default_per_page: 10
+    max_per_page: 100

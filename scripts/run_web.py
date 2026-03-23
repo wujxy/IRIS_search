@@ -2,8 +2,13 @@
 """
 IRIS Web Server Startup Script
 Starts the FastAPI web server for literature browsing.
+
+Usage:
+    python run_web.py
+    python run_web.py --config configs/config.yaml
 """
 
+import argparse
 import sys
 from pathlib import Path
 
@@ -78,8 +83,27 @@ def check_and_start_models(deploy_server):
 
 def main():
     """Start the IRIS web server."""
+    parser = argparse.ArgumentParser(
+        description="IRIS Web Server",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python run_web.py
+  python run_web.py --config configs/config.yaml
+  python run_web.py --config configs/config_ex.yaml
+        """
+    )
+    parser.add_argument(
+        "--config",
+        type=str,
+        default=None,
+        help="Path to configuration file (default: configs/config.yaml)"
+    )
+
+    args = parser.parse_args()
+
     # Load configuration
-    config_loader = get_config()
+    config_loader = get_config(args.config)
     config = config_loader.config
     web_config = config_loader.web or {}
 
