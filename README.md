@@ -112,8 +112,8 @@ Edit `configs/config.yaml` to customize:
 # Web interface
 ./start.sh web
 
-# Daemon mode
-./start.sh daemon
+# Scheduler mode (recommended for periodic updates)
+./start.sh scheduler start
 ```
 
 ### Starting vLLM Service (Required for QA)

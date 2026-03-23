@@ -38,6 +38,7 @@ dependencies = [
 
     # Embedding (vLLM OpenAI compatible API)
     "openai>=1.12.0",
+    "vllm>=0.6.0",  # LLM inference server
 
     # Reranker (CrossEncoder)
     "sentence-transformers>=2.3.0",
