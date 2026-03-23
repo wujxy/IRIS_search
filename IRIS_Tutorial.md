@@ -311,8 +311,27 @@ pip install -r requirements.txt
 # 或者手动安装核心依赖
 pip install arxiv PyYAML requests
 pip install pymupdf chonkie pymilvus openai sentence-transformers
-pip install numpy jinja2 tqdm
+pip install numpy jinja2 tqdm nltk  # nltk用于句子级chunk切分
 ```
+
+**NLTK 数据下载**：
+
+首次运行需要下载NLTK分句数据（用于句子级chunk切分）：
+
+```bash
+# 方法1：使用Python命令下载
+python -c "import nltk; nltk.download('punkt'); nltk.download('punkt_tab')"
+
+# 方法2：交互式下载
+python -c "import nltk; nltk.download('punkt_tab')"
+
+# 方法3：首次运行时自动下载（IRIS会自动处理）
+```
+
+**说明**：
+- NLTK数据默认下载到 `~/nltk_data/` 目录
+- 如果网络受限，可手动下载并解压到该目录
+- 详细说明见 [NLTK数据安装](https://www.nltk.org/data.html)
 
 ---
 
@@ -414,9 +433,35 @@ document:
   chunk_size: 512
   chunk_overlap: 50
   use_title: true
-  use_semantic: false  # 可选：是否使用语义切分
-  chunk_backend: sentence  # sentence 或 semantic
+  chunk_backend: sentence  # Options: sentence, semantic, simple
+  remove_references: true  # 自动剔除参考文献部分
+  reference_keywords:      # 参考文献检测关键词（可选）
+    - References
+    - Bibliography
+    - REFERENCES
+    - BIBLIOGRAPHY
+    - 参考文献
+  use_semantic: false  # 可选：是否使用语义切分（需chonkie库）
 ```
+
+**Chunk 策略说明**：
+
+| 策略 | 配置值 | 说明 | 推荐场景 |
+|------|--------|------|----------|
+| 句子切分 | `sentence` | 基于NLTK句子边界检测，保持语义完整 | **推荐**，适合大多数学术文献 |
+| 语义切分 | `semantic` | 使用chonkie库进行语义分割 | 需要额外配置，适合长文档 |
+| 简单切分 | `simple` | 按字符数固定切分 | 后备方案，不推荐 |
+
+**功能说明**：
+- **参考文献自动剔除**：自动识别并删除参考文献部分，提高向量质量
+- **句子完整性**：确保chunk不会截断句子，保持语义连贯
+- **智能重叠**：重叠区域包含完整句子，而非字符级重叠
+- **回退机制**：NLTK不可用时自动降级到简单切分
+
+**参数调优建议**：
+- `chunk_size: 512` - 适合大多数embedding模型（约384-512 tokens）
+- `chunk_overlap: 50` - 保持上下文连贯性，约10%重叠
+- 对于中文文献，可适当增大chunk_size（如768或1024）
 
 #### 4.1.9 检索配置 (retrieval)
 

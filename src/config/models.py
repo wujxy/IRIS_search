@@ -83,6 +83,12 @@ class DocumentConfig(BaseModel):
     use_title: bool = True
     use_semantic: bool = False
     chunk_backend: str = "sentence"
+    remove_references: bool = True
+    reference_keywords: List[str] = [
+        "References", "Bibliography",
+        "REFERENCES", "BIBLIOGRAPHY",
+        "参考文献"
+    ]
 
 
 class RetrievalConfig(BaseModel):

@@ -199,22 +199,65 @@ uv pip install "vllm>=0.6.0" --system
 print_info "vLLM installed successfully"
 
 # ============================================
-# Step 4: Verify Installation
+# Step 4: Download NLTK data
 # ============================================
-print_header "Step 4: Verifying Installation"
+print_header "Step 4: Downloading NLTK Data"
+
+print_info "Downloading NLTK sentence tokenizer data..."
+NLTK_DOWNLOAD=$(.venv/bin/python -c "
+import nltk
+import sys
+try:
+    nltk.data.find('tokenizers/punkt')
+    print('punkt already downloaded')
+except LookupError:
+    try:
+        nltk.download('punkt', quiet=True)
+        print('punkt downloaded successfully')
+    except Exception as e:
+        print(f'punkt download failed: {e}', file=sys.stderr)
+        sys.exit(1)
+
+try:
+    nltk.data.find('tokenizers/punkt_tab')
+    print('punkt_tab already downloaded')
+except LookupError:
+    try:
+        nltk.download('punkt_tab', quiet=True)
+        print('punkt_tab downloaded successfully')
+    except Exception as e:
+        print(f'punkt_tab download failed: {e}', file=sys.stderr)
+        sys.exit(1)
+
+print('All NLTK data downloaded successfully')
+" 2>&1)
+
+if [ $? -eq 0 ]; then
+    print_info "NLTK data ready"
+    echo "$NLTK_DOWNLOAD" | grep -v "already downloaded" | head -5
+else
+    print_error "Failed to download NLTK data"
+    echo "$NLTK_DOWNLOAD"
+    print_warning "NLTK data will be downloaded on first use"
+fi
+
+# ============================================
+# Step 5: Verify Installation
+# ============================================
+print_header "Step 5: Verifying Installation"
 
 print_info "Python version:"
 .venv/bin/python --version
 
 print_info "Installed packages:"
-.venv/bin/pip list | grep -E "(arxiv|pymilvus|fastapi|vllm)" || true
+.venv/bin/pip list | grep -E "(arxiv|pymilvus|fastapi|vllm|nltk)" || true
 
-# Test imports
+# Test imports (including NLTK)
 print_info "Testing Python imports..."
 TEST_IMPORTS=$(.venv/bin/python -c "
 import sys
 failed = []
-packages = ['arxiv', 'yaml', 'fitz', 'chonkie', 'pymilvus', 'openai', 'fastapi', 'uvicorn']
+packages = ['arxiv', 'yaml', 'fitz', 'chonkie', 'pymilvus', 'openai', 'fastapi', 'uvicorn', 'nltk']
 for pkg in packages:
     try:
         __import__(pkg)
@@ -235,9 +278,9 @@ else
 fi
 
 # ============================================
-# Step 5: Create necessary directories
+# Step 6: Create necessary directories
 # ============================================
-print_header "Step 5: Creating Directory Structure"
+print_header "Step 6: Creating Directory Structure"
 
 mkdir -p logs
 print_info "Created logs directory"
@@ -246,9 +289,9 @@ print_info "Directory structure:"
 tree -L 2 -d 2>/dev/null || find . -maxdepth 2 -type d | grep -v ".git" | grep -v "__pycache__" | head -20
 
 # ============================================
-# Step 6: Check prerequisites
+# Step 7: Check prerequisites
 # ============================================
-print_header "Step 6: Checking Prerequisites"
+print_header "Step 7: Checking Prerequisites"
 
 # Check Python version
 PYTHON_VERSION=$(.venv/bin/python --version 2>&1 | awk '{print $2}')
@@ -272,9 +315,9 @@ else
 fi
 
 # ============================================
-# Step 7: Configuration check
+# Step 8: Configuration check
 # ============================================
-print_header "Step 7: Configuration"
+print_header "Step 8: Configuration"
 
 if [ -f "configs/config.yaml" ]; then
     print_info "Configuration file found: configs/config.yaml"

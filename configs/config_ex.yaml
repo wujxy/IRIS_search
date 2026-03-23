@@ -76,7 +76,14 @@ document:
   chunk_size: 512
   chunk_overlap: 50
   use_title: true
-  chunk_backend: sentence  # Options: token, sentence, recursive
+  chunk_backend: sentence  # Options: sentence, recursive, semantic
+  remove_references: true  # Remove references/bibliography section from PDFs
+  reference_keywords:      # Keywords that indicate reference section
+    - References
+    - Bibliography
+    - REFERENCES
+    - BIBLIOGRAPHY
+    - 参考文献
 
 # Retrieval configuration
 retrieval:

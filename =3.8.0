@@ -1,0 +1,10 @@
+Looking in indexes: https://mirrors.aliyun.com/pypi/simple/
+Collecting nltk
+  Downloading https://mirrors.aliyun.com/pypi/packages/c2/7e/9af5a710a1236e4772de8dfcc6af942a561327bb9f42b5b4a24d0cf100fd/nltk-3.9.3-py3-none-any.whl (1.5 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.5/1.5 MB 7.8 MB/s eta 0:00:00
+Requirement already satisfied: joblib in ./.venv/lib/python3.10/site-packages (from nltk) (1.5.3)
+Requirement already satisfied: click in ./.venv/lib/python3.10/site-packages (from nltk) (8.3.1)
+Requirement already satisfied: tqdm in ./.venv/lib/python3.10/site-packages (from nltk) (4.67.3)
+Requirement already satisfied: regex>=2021.8.3 in ./.venv/lib/python3.10/site-packages (from nltk) (2026.2.28)
+Installing collected packages: nltk
+Successfully installed nltk-3.9.3

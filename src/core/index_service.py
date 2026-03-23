@@ -27,7 +27,9 @@ class IndexService:
         chunk_size: int = 512,
         chunk_overlap: int = 50,
         use_semantic_chunking: bool = False,
-        semantic_model: Optional[str] = None
+        semantic_model: Optional[str] = None,
+        remove_references: bool = True,
+        chunk_backend: str = "sentence"
     ):
         """
         Initialize index service.
@@ -39,6 +41,8 @@ class IndexService:
             chunk_overlap: Overlap between chunks (default: 50)
             use_semantic_chunking: Use semantic chunking (default: False)
             semantic_model: Model for semantic chunking
+            remove_references: Remove references section from PDFs (default: True)
+            chunk_backend: Chunking strategy: sentence, recursive, or semantic (default: sentence)
         """
         self.embedding_service = embedding_service
         self.milvus_service = milvus_service
@@ -50,12 +54,15 @@ class IndexService:
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
             use_semantic_chunking=use_semantic_chunking,
-            semantic_model=semantic_model
+            semantic_model=semantic_model,
+            remove_references=remove_references,
+            chunk_backend=chunk_backend
         )
 
         logger.info(
             f"IndexService initialized: chunk_size={chunk_size}, "
-            f"overlap={chunk_overlap}, semantic={use_semantic_chunking}"
+            f"overlap={chunk_overlap}, semantic={use_semantic_chunking}, "
+            f"remove_references={remove_references}, chunk_backend={chunk_backend}"
         )
 
     async def chunk_and_index(
@@ -268,7 +275,9 @@ def create_index_service_from_config(config: dict) -> IndexService:
         chunk_size=document_config.get("chunk_size", 512),
         chunk_overlap=document_config.get("chunk_overlap", 50),
         use_semantic_chunking=document_config.get("use_semantic", False),
-        semantic_model=document_config.get("semantic_model", None)
+        semantic_model=document_config.get("semantic_model", None),
+        remove_references=document_config.get("remove_references", True),
+        chunk_backend=document_config.get("chunk_backend", "sentence")
     )
 
     logger.info("IndexService created from config")
