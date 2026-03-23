@@ -6,6 +6,7 @@ Main script to run a complete IRIS update cycle.
 Usage:
     python scripts/run_update_cycle.py
     python scripts/run_update_cycle.py --config configs/config.yaml
+    python scripts/run_update_cycle.py --scheduler  # New scheduler mode
 """
 
 import argparse
@@ -21,6 +22,7 @@ sys.path.insert(1, str(project_root / "src"))
 from src.config import get_config
 from src.common import setup_logging
 from core.orchestrator import UpdateOrchestrator, DaemonOrchestrator
+from scheduler.scheduler_orchestrator import SchedulerOrchestrator
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +67,11 @@ Examples:
         default=None,
         help="Hours between update cycles (default: from config)"
     )
+    parser.add_argument(
+        "--scheduler",
+        action="store_true",
+        help="Run with new APScheduler-based scheduler (persistent state)"
+    )
 
     args = parser.parse_args()
 
@@ -89,11 +96,30 @@ Examples:
     )
 
     # Run orchestrator
-    if args.daemon:
+    if args.scheduler:
+        # New APScheduler-based mode
+        interval = args.interval or config.get("scheduler", {}).get(
+            "default_interval_hours",
+            config.get("update", {}).get("interval_hours", 24)
+        )
+        orchestrator = SchedulerOrchestrator(config)
+        try:
+            orchestrator.start_scheduler(interval_hours=interval)
+            # Keep running until interrupted
+            import time
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            logger.info("Shutting down scheduler...")
+            orchestrator.stop_scheduler()
+            logger.info("Scheduler stopped")
+    elif args.daemon:
+        # Legacy daemon mode (while True + time.sleep)
         interval = args.interval or config.get("update", {}).get("interval_hours", 2)
         orchestrator = DaemonOrchestrator(config, interval_hours=interval)
         orchestrator.run_daemon()
     else:
+        # Single update cycle
         orchestrator = UpdateOrchestrator(config)
         success = orchestrator.run_cycle()
         sys.exit(0 if success else 1)

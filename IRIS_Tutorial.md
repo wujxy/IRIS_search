@@ -41,6 +41,10 @@ bash build_milvus.sh
 |------|------|
 | `./start.sh` | 运行单次更新周期 |
 | `./start.sh daemon` | 守护进程模式（自动定期更新） |
+| `./start.sh scheduler start` | 调度器模式（推荐，支持任务状态查询） |
+| `./start.sh scheduler status` | 查看调度器状态 |
+| `./start.sh scheduler tasks` | 列出任务历史 |
+| `./start.sh scheduler cancel <task_id>` | 取消任务 |
 | `./start.sh query` | 交互式查询模式 |
 | `./start.sh web` | 启动 Web 界面 (http://127.0.0.1:8000) |
 | `./start.sh help` | 显示帮助信息 |
@@ -188,6 +192,12 @@ IRIS (Intelligent Research Information System) 是一个自动化的人工智能
 ```
 IRIS_search/
 ├── src/
+│   ├── scheduler/              # 调度器模块（新增）
+│   │   ├── task_service.py      # 任务数据库服务
+│   │   ├── scheduler_manager.py # APScheduler 管理器
+│   │   ├── task_executor.py     # 任务执行包装器
+│   │   ├── task_models.py       # 数据模型
+│   │   └── scheduler_orchestrator.py  # 高层编排器
 │   ├── infrastructure/          # 基础设施层
 │   │   ├── milvus_service.py      # Milvus 向量数据库服务
 │   │   ├── embedding_service.py   # vLLM Embedding 服务
@@ -211,7 +221,8 @@ IRIS_search/
 │       ├── routers/              # 路由模块
 │       │   ├── web_routes.py     # 网页路由
 │       │   ├── api_routes.py     # API 路由
-│       │   └── qa_routes.py      # QA 路由
+│       │   ├── qa_routes.py      # QA 路由
+│       │   └── scheduler_routes.py  # 调度器 API 路由
 │       ├── templates/            # Jinja2 模板
 │       └── static/               # 静态资源
 ├── scripts/                    # 运行脚本
@@ -525,6 +536,22 @@ web:
   log_level: info   # 日志级别
 ```
 
+#### 4.1.14 调度器配置 (scheduler)
+
+```yaml
+scheduler:
+  enabled: true                    # 启用调度器
+  default_interval_hours: 24       # 默认更新间隔
+  history_retention_days: 30       # 任务历史保留天数
+  log_level: INFO                  # 日志级别
+```
+
+**说明**：
+- `enabled`: 是否启用调度器功能
+- `default_interval_hours`: 默认的更新间隔（小时）
+- `history_retention_days`: 任务记录保留天数
+- `log_level`: 调度器日志级别
+
 **Gmail 用户注意**: 需要使用应用专用密码，而非账号密码。
 生成地址: https://myaccount.google.com/apppasswords
 
@@ -685,7 +712,47 @@ IRIS Update Cycle Completed Successfully
 ============================================================
 ```
 
-#### 6.1.2 查看更新结果
+#### 6.1.2 调度器模式（推荐）
+
+调度器模式使用 APScheduler 提供持久化的任务状态管理和实时查询能力：
+
+```bash
+# 启动调度器（使用配置文件中的间隔）
+./start.sh scheduler start
+
+# 指定更新间隔
+./start.sh scheduler start --interval 24
+
+# 查看调度器状态
+./start.sh scheduler status
+
+# 列出任务
+./start.sh scheduler tasks
+
+# 取消运行中的任务
+./start.sh scheduler cancel <task_id>
+
+# 立即执行一次更新
+./start.sh scheduler run-now
+```
+
+**调度器模式优势**：
+- 任务状态持久化到数据库
+- 可查询任务历史记录
+- 支持取消正在运行的任务
+- 进程重启后自动恢复调度
+
+**CLI 命令参考**：
+
+| 命令 | 描述 |
+|------|------|
+| `./start.sh scheduler start` | 启动调度器 |
+| `./start.sh scheduler status` | 查看调度器状态 |
+| `./start.sh scheduler tasks` | 列出所有任务 |
+| `./start.sh scheduler cancel <task_id>` | 取消任务 |
+| `./start.sh scheduler run-now` | 立即执行更新 |
+
+#### 6.1.3 查看更新结果
 
 每次更新创建一个带时间戳的文件夹：
 
@@ -879,6 +946,14 @@ python scripts/run_web.py
 - `GET /api/qa/conversation/{session_id}` - 获取历史
 - `DELETE /api/qa/conversation/{session_id}` - 删除会话
 - `POST /api/qa/query` - 单次查询（无状态）
+
+**Scheduler API**:
+- `GET /scheduler/status` - 获取调度器状态
+- `GET /scheduler/tasks` - 列出任务（支持过滤）
+- `GET /scheduler/tasks/{task_id}` - 获取任务详情
+- `POST /scheduler/tasks/{task_id}/cancel` - 取消任务
+- `POST /scheduler/tasks/run-now` - 立即执行更新
+- `GET /scheduler/jobs` - 获取调度任务列表
 
 **API 文档**: `http://127.0.0.1:8000/docs` (FastAPI 自动生成)
 
@@ -1503,9 +1578,13 @@ ls -td update_* | tail -n +6 | xargs rm -rf
 | 命令 | 描述 |
 |------|------|
 | `source .venv/bin/activate` | 激活虚拟环境 |
-| `./start_IRIS.sh` | 运行单次更新（推荐） |
-| `./start_IRIS.sh --daemon` | 守护进程模式 |
-| `./start_IRIS.sh --interval 4` | 设置更新间隔为 4 小时 |
+| `./start.sh` | 运行单次更新 |
+| `./start.sh daemon` | 守护进程模式 |
+| `./start.sh scheduler start` | 启动调度器模式（推荐） |
+| `./start.sh scheduler status` | 查看调度器状态 |
+| `./start.sh scheduler tasks` | 列出任务 |
+| `./start.sh scheduler cancel <task_id>` | 取消任务 |
+| `./start.sh scheduler run-now` | 立即执行更新 |
 | `python scripts/run_update_cycle.py` | 运行单次更新 |
 | `python scripts/iris_query.py -i` | 交互式查询 |
 | `python scripts/iris_query.py "问题"` | 单次查询 |

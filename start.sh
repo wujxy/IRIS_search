@@ -81,6 +81,95 @@ case "${ARGS[0]:-update}" in
         print_info "Press Ctrl+C to stop"
         $PYTHON scripts/run_update_cycle.py --config "$CONFIG_FILE" --daemon "${ARGS[@]:1}"
         ;;
+    scheduler)
+        # Handle scheduler subcommands
+        case "${ARGS[1]:-start}" in
+            start)
+                print_header "Starting IRIS Scheduler"
+                print_info "Scheduler mode with persistent task state"
+                print_info "Press Ctrl+C to stop"
+                $PYTHON scripts/run_update_cycle.py --config "$CONFIG_FILE" --scheduler "${ARGS[@]:2}"
+                ;;
+            status)
+                print_header "Scheduler Status"
+                $PYTHON -c "
+from scheduler.task_service import TaskService
+from scheduler.scheduler_orchestrator import SchedulerOrchestrator
+from src.config import get_config
+
+config = get_config().config
+service = TaskService(config['storage']['paper_db_path'])
+stats = service.get_task_stats()
+print(f'Total tasks: {stats[\"total\"]}')
+for status, count in stats.items():
+    if status != 'total':
+        print(f'  {status}: {count}')
+" 2>/dev/null || print_error "Scheduler module not available"
+                ;;
+            tasks)
+                print_header "Recent Tasks"
+                $PYTHON -c "
+from scheduler.task_service import TaskService
+from src.config import get_config
+
+config = get_config().config
+service = TaskService(config['storage']['paper_db_path'])
+tasks = service.get_recent_tasks(limit=10)
+print(f'\\nRecent {len(tasks)} tasks:')
+print(f'{'Task ID':<36} {'Type':<15} {'Status':<12} {'Scheduled':<20}')
+print('-' * 90)
+for task in tasks:
+    print(f'{task.task_id:<36} {task.task_type:<15} {task.status:<12} {task.scheduled_time.strftime(\"%Y-%m-%d %H:%M:%S\"):<20}')
+" 2>/dev/null || print_error "Scheduler module not available"
+                ;;
+            cancel)
+                if [ -z "${ARGS[2]}" ]; then
+                    print_error "Usage: ./start.sh scheduler cancel <task_id>"
+                    exit 1
+                fi
+                print_header "Cancelling Task: ${ARGS[2]}"
+                $PYTHON -c "
+from scheduler.task_service import TaskService
+from src.config import get_config
+import sys
+
+config = get_config().config
+service = TaskService(config['storage']['paper_db_path'])
+task_id = '${ARGS[2]}'
+success = service.cancel_task(task_id)
+if success:
+    print('Task cancelled successfully')
+    sys.exit(0)
+else:
+    print('Failed to cancel task')
+    sys.exit(1)
+" 2>/dev/null || print_error "Scheduler module not available"
+                ;;
+            run-now)
+                print_header "Triggering Immediate Update"
+                $PYTHON -c "
+from scheduler.scheduler_orchestrator import SchedulerOrchestrator
+from src.config import get_config
+import sys
+
+config = get_config().config
+orchestrator = SchedulerOrchestrator(config)
+success = orchestrator.run_single_cycle()
+if success:
+    print('Update cycle triggered')
+    sys.exit(0)
+else:
+    print('Failed to trigger update')
+    sys.exit(1)
+" 2>/dev/null || print_error "Scheduler module not available"
+                ;;
+            *)
+                print_error "Unknown scheduler command: ${ARGS[1]}"
+                print_info "Available commands: start, status, tasks, cancel <task_id>, run-now"
+                exit 1
+                ;;
+        esac
+        ;;
     query)
         print_header "IRIS Interactive Query Mode"
         $PYTHON scripts/iris_query.py --config "$CONFIG_FILE" --interactive
@@ -99,16 +188,23 @@ case "${ARGS[0]:-update}" in
         echo "  --config, -c <file>  Specify config file (default: configs/config.yaml)"
         echo ""
         echo "Commands:"
-        echo "  update     Run single update cycle (default)"
-        echo "  daemon     Run in daemon mode with periodic updates"
-        echo "  query      Start interactive query mode"
-        echo "  web        Start web interface"
-        echo "  help       Show this help message"
+        echo "  update               Run single update cycle (default)"
+        echo "  daemon               Run in daemon mode with periodic updates"
+        echo "  scheduler start      Start scheduler with persistent state (recommended)"
+        echo "  scheduler status     Show scheduler status"
+        echo "  scheduler tasks      List recent tasks"
+        echo "  scheduler cancel <id> Cancel a task"
+        echo "  scheduler run-now    Trigger immediate update"
+        echo "  query                Start interactive query mode"
+        echo "  web                  Start web interface"
+        echo "  help                 Show this help message"
         echo ""
         echo "Examples:"
         echo "  ./start.sh"
         echo "  ./start.sh --config configs/config_ex.yaml"
         echo "  ./start.sh daemon --interval 2"
+        echo "  ./start.sh scheduler start"
+        echo "  ./start.sh scheduler tasks"
         echo "  ./start.sh query"
         echo "  ./start.sh web"
         ;;

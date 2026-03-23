@@ -10,7 +10,7 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 import logging
 
-from web.routers import web_routes, api_routes, qa_routes
+from web.routers import web_routes, api_routes, qa_routes, scheduler_routes
 from web.template_config import templates
 from web.dependencies import ModelUnavailableError
 
@@ -32,6 +32,7 @@ app.mount("/static", StaticFiles(directory="src/web/static"), name="static")
 app.include_router(web_routes.router)
 app.include_router(api_routes.router)
 app.include_router(qa_routes.router)
+app.include_router(scheduler_routes.router)
 
 
 @app.get("/health")
@@ -94,6 +95,17 @@ async def general_exception_handler(request: Request, exc: Exception):
 async def startup_event():
     """Run on application startup."""
     logger.info("IRIS Web application starting up...")
+
+    # Initialize scheduler orchestrator for API endpoints
+    try:
+        from scheduler.scheduler_orchestrator import SchedulerOrchestrator
+        from src.config import get_config
+        config = get_config().config
+        scheduler_orchestrator = SchedulerOrchestrator(config)
+        scheduler_routes.set_scheduler_orchestrator(scheduler_orchestrator)
+        logger.info("Scheduler orchestrator initialized for API")
+    except Exception as e:
+        logger.warning(f"Could not initialize scheduler orchestrator: {e}")
 
 
 @app.on_event("shutdown")

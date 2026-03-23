@@ -45,6 +45,9 @@ dependencies = [
     # Data Processing
     "numpy>=1.24.0",
 
+    # Task scheduling
+    "apscheduler>=3.10.0",
+
     # Logging
     "tqdm>=4.65.0",
 

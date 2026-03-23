@@ -6,21 +6,41 @@
 # for iris_query.py， run_update_cycle.py, run_web.py
 # ============================================================
 
-update:
+update: # for demon mode
   interval_hours: 24  # How often to search for new papers
+
+scheduler:
+  enabled: true  # Enable scheduler mode
+  default_interval_hours: 24  # Default interval for scheduled tasks
+  history_retention_days: 30  # How long to keep task records
+  log_level: INFO  # Scheduler logging level
 
 arxiv:
   keywords:
-    - neutrino
-    - juno
-    - dune
-    - hyper-kamiokande
-    - super-kamiokande
-    - sno
-    - kamland
+    # - neutrino
+    # - juno
+    # - dune
+    # - hyper-kamiokande
+    # - super-kamiokande
+    # - sno
+    # - kamland
     - borexino
-  max_results_per_keyword: 10
+  max_results_per_keyword: 1
   sort_by: SubmittedDate  # Options: SubmittedDate, LastUpdatedDate, Relevance
+
+# Document processing configuration
+document:
+  chunk_size: 512
+  chunk_overlap: 50
+  use_title: true
+  chunk_backend: sentence  # Options: sentence, recursive, semantic
+  remove_references: true  # Remove references/bibliography section from PDFs
+  reference_keywords:      # Keywords that indicate reference section
+    - References
+    - Bibliography
+    - REFERENCES
+    - BIBLIOGRAPHY
+    - 参考文献
 
 storage:
   database_root: /home/NagaiYoru/research/IRIS_papers
@@ -74,20 +94,6 @@ reranker:
   batch_size: 16
   device: cpu  # cpu Or cuda:0
 
-# Document processing configuration
-document:
-  chunk_size: 512
-  chunk_overlap: 50
-  use_title: true
-  chunk_backend: sentence  # Options: sentence, recursive, semantic
-  remove_references: true  # Remove references/bibliography section from PDFs
-  reference_keywords:      # Keywords that indicate reference section
-    - References
-    - Bibliography
-    - REFERENCES
-    - BIBLIOGRAPHY
-    - 参考文献
-
 # Retrieval configuration
 retrieval:
   top_k: 5
@@ -121,6 +127,16 @@ duplicate_detection:
 logging:
   level: INFO  # Options: DEBUG, INFO, WARNING, ERROR
   log_dir: ./logs
+
+# Email notification
+email:
+  enabled: false  
+  sender: your_email@gmail.com
+  smtp_server: smtp.gmail.com
+  smtp_port: 587
+  password: your_app_password  # Use app-specific password for Gmail
+  receiver: your_email@gmail.com
+  subject_prefix: "[IRIS] "
 
 # Web interface configuration
 web:
