@@ -40,11 +40,11 @@ bash build_milvus.sh
 | 命令 | 描述 |
 |------|------|
 | `./start.sh` | 运行单次更新周期 |
-| `./start.sh daemon` | 守护进程模式（自动定期更新） |
 | `./start.sh scheduler start` | 调度器模式（推荐，支持任务状态查询） |
 | `./start.sh scheduler status` | 查看调度器状态 |
 | `./start.sh scheduler tasks` | 列出任务历史 |
 | `./start.sh scheduler cancel <task_id>` | 取消任务 |
+| `./start.sh scheduler run-now` | 立即执行更新 |
 | `./start.sh query` | 交互式查询模式 |
 | `./start.sh web` | 启动 Web 界面 (http://127.0.0.1:8000) |
 | `./start.sh help` | 显示帮助信息 |
@@ -628,8 +628,8 @@ IRIS 提供了便捷的启动脚本 `start_IRIS.sh`：
 # 单次更新
 ./start_IRIS.sh
 
-# 守护进程模式（每 2 小时更新一次）
-./start_IRIS.sh --daemon --interval 2
+# 调度器模式（每 2 小时更新一次，推荐）
+./start_IRIS.sh scheduler start --interval 2
 
 # 自定义配置文件
 ./start_IRIS.sh --config custom_config.yaml
@@ -640,7 +640,7 @@ IRIS 提供了便捷的启动脚本 `start_IRIS.sh`：
 
 **start_IRIS.sh 功能**：
 - 自动检测 Python 虚拟环境
-- 支持守护进程模式（daemon mode）
+- 支持调度器模式（scheduler mode，持久化任务状态）
 - 可配置更新间隔
 - 彩色日志输出
 - 优雅的错误处理
@@ -1579,7 +1579,6 @@ ls -td update_* | tail -n +6 | xargs rm -rf
 |------|------|
 | `source .venv/bin/activate` | 激活虚拟环境 |
 | `./start.sh` | 运行单次更新 |
-| `./start.sh daemon` | 守护进程模式 |
 | `./start.sh scheduler start` | 启动调度器模式（推荐） |
 | `./start.sh scheduler status` | 查看调度器状态 |
 | `./start.sh scheduler tasks` | 列出任务 |

@@ -357,7 +357,7 @@ echo ""
 
 echo "Available commands:"
 echo "  ./start_IRIS.sh              # Run single update cycle"
-echo "  ./start_IRIS.sh --daemon     # Run in daemon mode"
+echo "  ./start_IRIS.sh --scheduler  # Start scheduler mode"
 echo "  .venv/bin/python scripts/iris_query.py --help"
 echo "  .venv/bin/python scripts/run_web.py"
 echo ""

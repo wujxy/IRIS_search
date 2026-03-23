@@ -21,7 +21,7 @@ sys.path.insert(1, str(project_root / "src"))
 
 from src.config import get_config
 from src.common import setup_logging
-from core.orchestrator import UpdateOrchestrator, DaemonOrchestrator
+from core.orchestrator import UpdateOrchestrator
 from scheduler.scheduler_orchestrator import SchedulerOrchestrator
 
 logger = logging.getLogger(__name__)
@@ -39,7 +39,7 @@ Examples:
   python run_update_cycle.py
   python run_update_cycle.py --config configs/config.yaml
   python run_update_cycle.py --log-level DEBUG
-  python run_update_cycle.py --daemon --interval 2
+  python run_update_cycle.py --scheduler --interval 2
         """
     )
 
@@ -57,11 +57,6 @@ Examples:
         help="Logging level (overrides config)"
     )
     parser.add_argument(
-        "--daemon",
-        action="store_true",
-        help="Run as daemon with continuous update cycles"
-    )
-    parser.add_argument(
         "--interval",
         type=int,
         default=None,
@@ -70,7 +65,7 @@ Examples:
     parser.add_argument(
         "--scheduler",
         action="store_true",
-        help="Run with new APScheduler-based scheduler (persistent state)"
+        help="Run with APScheduler-based scheduler (persistent state)"
     )
 
     args = parser.parse_args()
@@ -97,7 +92,7 @@ Examples:
 
     # Run orchestrator
     if args.scheduler:
-        # New APScheduler-based mode
+        # APScheduler-based mode
         interval = args.interval or config.get("scheduler", {}).get(
             "default_interval_hours",
             config.get("update", {}).get("interval_hours", 24)
@@ -113,13 +108,8 @@ Examples:
             logger.info("Shutting down scheduler...")
             orchestrator.stop_scheduler()
             logger.info("Scheduler stopped")
-    elif args.daemon:
-        # Legacy daemon mode (while True + time.sleep)
-        interval = args.interval or config.get("update", {}).get("interval_hours", 2)
-        orchestrator = DaemonOrchestrator(config, interval_hours=interval)
-        orchestrator.run_daemon()
     else:
-        # Single update cycle
+        # Single update cycle (default)
         orchestrator = UpdateOrchestrator(config)
         success = orchestrator.run_cycle()
         sys.exit(0 if success else 1)

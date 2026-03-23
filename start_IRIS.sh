@@ -5,7 +5,7 @@
 #
 # Usage:
 #   ./start_IRIS.sh              # Run single update cycle
-#   ./start_IRIS.sh --daemon    # Run in daemon mode with periodic updates
+#   ./start_IRIS.sh --scheduler # Start scheduler with periodic updates
 #   ./start_IRIS.sh --help      # Show help
 #
 
@@ -16,7 +16,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PYTHON_ENV=".venv/bin/python"
 
 # Default options
-DAEMON_MODE=false
+SCHEDULER_MODE=false
 INTERVAL_HOURS=2
 CONFIG_FILE="${SCRIPT_DIR}/configs/config.yaml"
 
@@ -42,8 +42,8 @@ print_warning() {
 # Parse arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
-        --daemon)
-            DAEMON_MODE=true
+        --scheduler)
+            SCHEDULER_MODE=true
             shift
             ;;
         --interval)
@@ -61,14 +61,14 @@ while [[ $# -gt 0 ]]; do
             echo "  ./start_IRIS.sh [options]"
             echo ""
             echo "Options:"
-            echo "  --daemon              Run in daemon mode with periodic updates"
-            echo "  --interval HOURS       Update interval in hours (default: 2)"
-            echo "  --config PATH         Path to config file (default: configs/config.yaml)"
-            echo "  -h, --help           Show this help message"
+            echo "  --scheduler           Run in scheduler mode with persistent state"
+            echo "  --interval HOURS      Update interval in hours (default: 2)"
+            echo "  --config PATH        Path to config file (default: configs/config.yaml)"
+            echo "  -h, --help          Show this help message"
             echo ""
             echo "Examples:"
             echo "  ./start_IRIS.sh"
-            echo "  ./start_IRIS.sh --daemon --interval 4"
+            echo "  ./start_IRIS.sh --scheduler --interval 4"
             echo "  ./start_IRIS.sh --config custom_config.yaml"
             exit 0
             ;;
@@ -114,29 +114,12 @@ run_update_cycle() {
     return $exit_code
 }
 
-# Daemon mode: run update cycles periodically
-if [ "$DAEMON_MODE" = true ]; then
-    print_info "Running in daemon mode..."
+# Scheduler mode: run update cycles periodically with persistent state
+if [ "$SCHEDULER_MODE" = true ]; then
+    print_info "Starting scheduler mode..."
     print_info "Update interval: $INTERVAL_HOURS hour(s)"
     print_info "Press Ctrl+C to stop"
-
-    while true; do
-        echo ""
-        echo "========================================"
-        echo "$(date '+%Y-%m-%d %H:%M:%S') - Starting update cycle"
-        echo "========================================"
-
-        run_update_cycle
-
-        # Wait for next update
-        sleep_seconds=$((INTERVAL_HOURS * 3600))
-        print_info "Next update in $INTERVAL_HOURS hour(s) (sleeping for $sleep_seconds seconds)..."
-
-        # Sleep in smaller chunks to handle Ctrl+C properly
-        for ((i=0; i<$sleep_seconds; i+=60)); do
-            sleep 60
-        done
-    done
+    $PYTHON_ENV scripts/run_update_cycle.py --config "$CONFIG_FILE" --scheduler --interval "$INTERVAL_HOURS"
 else
     # Single update cycle mode
     run_update_cycle

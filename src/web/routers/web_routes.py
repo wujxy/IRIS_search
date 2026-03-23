@@ -10,6 +10,7 @@ from collections import Counter
 from services.paper_service import PaperService
 from web.dependencies import get_paper_service
 from web.template_config import templates
+from web.routers import scheduler_routes
 
 router = APIRouter(tags=["web"])
 
@@ -194,3 +195,62 @@ def truncate_text(text: Optional[str], length: int) -> str:
     if len(text) <= length:
         return text
     return text[:length] + "..."
+
+
+@router.get("/scheduler", response_class=HTMLResponse)
+async def scheduler_page(
+    request: Request,
+    status: Optional[str] = None,
+    task_type: Optional[str] = None,
+    page: int = 1,
+):
+    """
+    Scheduler task management page.
+
+    Displays:
+    - Scheduler status (running/stopped)
+    - Task statistics (total, completed, failed, etc.)
+    - Task history with filtering
+    """
+    orchestrator = scheduler_routes.get_scheduler_orchestrator()
+    if not orchestrator:
+        raise HTTPException(status_code=503, detail="Scheduler not available. Start the scheduler first.")
+
+    # Get scheduler status
+    status_info = orchestrator.get_scheduler_status()
+
+    # Get tasks with optional filtering
+    from scheduler.task_models import TaskStatus, TaskType
+
+    status_filter = None
+    if status:
+        try:
+            status_filter = TaskStatus(status)
+        except ValueError:
+            pass
+
+    type_filter = None
+    if task_type:
+        try:
+            type_filter = TaskType(task_type)
+        except ValueError:
+            pass
+
+    tasks = orchestrator.task_service.list_tasks(
+        status=status_filter,
+        task_type=type_filter,
+        limit=50,
+        offset=0
+    )
+
+    # Convert tasks to dicts for template
+    tasks_dict = [task.to_dict() for task in tasks]
+
+    return templates.TemplateResponse(
+        "scheduler/index.html",
+        {
+            "request": request,
+            "scheduler": status_info,
+            "tasks": tasks_dict,
+        }
+    )

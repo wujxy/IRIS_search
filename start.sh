@@ -4,7 +4,7 @@
 #
 # Usage:
 #   ./start.sh                    # Run single update cycle
-#   ./start.sh daemon             # Run in daemon mode
+#   ./start.sh scheduler start    # Start scheduler
 #   ./start.sh query              # Interactive query mode
 #   ./start.sh web                # Start web interface
 #   ./start.sh --config <file>    # Specify config file
@@ -75,11 +75,6 @@ case "${ARGS[0]:-update}" in
     update)
         print_header "Starting IRIS Update Cycle"
         $PYTHON scripts/run_update_cycle.py --config "$CONFIG_FILE" "${ARGS[@]:1}"
-        ;;
-    daemon)
-        print_header "Starting IRIS Daemon Mode"
-        print_info "Press Ctrl+C to stop"
-        $PYTHON scripts/run_update_cycle.py --config "$CONFIG_FILE" --daemon "${ARGS[@]:1}"
         ;;
     scheduler)
         # Handle scheduler subcommands
@@ -189,7 +184,6 @@ else:
         echo ""
         echo "Commands:"
         echo "  update               Run single update cycle (default)"
-        echo "  daemon               Run in daemon mode with periodic updates"
         echo "  scheduler start      Start scheduler with persistent state (recommended)"
         echo "  scheduler status     Show scheduler status"
         echo "  scheduler tasks      List recent tasks"
@@ -202,7 +196,6 @@ else:
         echo "Examples:"
         echo "  ./start.sh"
         echo "  ./start.sh --config configs/config_ex.yaml"
-        echo "  ./start.sh daemon --interval 2"
         echo "  ./start.sh scheduler start"
         echo "  ./start.sh scheduler tasks"
         echo "  ./start.sh query"

@@ -350,35 +350,3 @@ class UpdateOrchestrator:
             logger.warning("Email notification failed")
 
 
-class DaemonOrchestrator(UpdateOrchestrator):
-    """
-    Orchestrator that runs update cycles continuously.
-
-    Runs update cycles at a configured interval.
-    """
-
-    def __init__(self, config: Optional[dict[str, Any]] = None, interval_hours: int = 2):
-        """
-        Initialize daemon orchestrator.
-
-        Args:
-            config: Configuration dictionary
-            interval_hours: Hours between update cycles
-        """
-        super().__init__(config)
-        self.interval_hours = interval_hours
-
-    def run_daemon(self) -> None:
-        """Run update cycles continuously."""
-        import time
-
-        logger.info(f"Starting daemon with {self.interval_hours}h interval")
-        logger.info("Press Ctrl+C to stop")
-
-        try:
-            while True:
-                self.run_cycle()
-                logger.info(f"Next cycle in {self.interval_hours} hours...")
-                time.sleep(self.interval_hours * 3600)
-        except KeyboardInterrupt:
-            logger.info("Daemon stopped by user")

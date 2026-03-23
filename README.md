@@ -140,9 +140,9 @@ python -m vllm.entrypoints.openai.api_server \
 python scripts/run_update_cycle.py
 ```
 
-**Daemon mode (periodic updates):**
+**Scheduler mode (periodic updates with persistent state):**
 ```bash
-./start_IRIS.sh --daemon --interval 4
+./start_IRIS.sh --scheduler --interval 4
 ```
 
 ### Querying the Knowledge Base
