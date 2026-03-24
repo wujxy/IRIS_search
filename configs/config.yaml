@@ -6,9 +6,6 @@
 # for iris_query.py， run_update_cycle.py, run_web.py
 # ============================================================
 
-update: # for demon mode
-  interval_hours: 24  # How often to search for new papers
-
 scheduler:
   enabled: true  # Enable scheduler mode
   default_interval_hours: 24  # Default interval for scheduled tasks
@@ -17,15 +14,15 @@ scheduler:
 
 arxiv:
   keywords:
-    # - neutrino
-    # - juno
-    # - dune
-    # - hyper-kamiokande
-    # - super-kamiokande
-    # - sno
-    # - kamland
+    - neutrino
+    - juno
+    - dune
+    - hyper-kamiokande
+    - super-kamiokande
+    - sno
+    - kamland
     - borexino
-  max_results_per_keyword: 1
+  max_results_per_keyword: 10
   sort_by: SubmittedDate  # Options: SubmittedDate, LastUpdatedDate, Relevance
 
 # Document processing configuration

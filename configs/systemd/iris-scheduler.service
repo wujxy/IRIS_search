@@ -1,0 +1,19 @@
+[Unit]
+Description=IRIS Scheduler Service
+After=network.target
+
+[Service]
+Type=simple
+User=NagaiYoru
+Group=NagaiYoru
+WorkingDirectory=/home/NagaiYoru/LLM_tuning/IRIS_search
+Environment="PATH=/home/NagaiYoru/.local/bin:/home/NagaiYoru/LLM_tuning/IRIS_search/.venv/bin:/usr/local/bin:/usr/bin:/bin"
+ExecStart=/home/NagaiYoru/LLM_tuning/IRIS_search/start.sh scheduler start
+ExecStop=/bin/kill -SIGTERM $MAINPID
+Restart=on-failure
+RestartSec=10
+StandardOutput=append:/home/NagaiYoru/LLM_tuning/IRIS_search/logs/scheduler.log
+StandardError=append:/home/NagaiYoru/LLM_tuning/IRIS_search/logs/scheduler.err
+
+[Install]
+WantedBy=multi-user.target

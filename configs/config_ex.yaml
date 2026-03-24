@@ -8,8 +8,11 @@
 #
 # ============================================================
 
-update:
-  interval_hours: 24  # How often to search for new papers
+scheduler:
+  enabled: true  # Enable scheduler mode
+  default_interval_hours: 24  # Default interval for scheduled tasks
+  history_retention_days: 30  # How long to keep task records
+  log_level: INFO  # Scheduler logging level
 
 arxiv:
   keywords:
